@@ -1,0 +1,29 @@
+{
+  "cli": {
+    "version": ">= 16.0.0",
+    "appVersionSource": "local"
+  },
+  "build": {
+    "rustore": {
+      "android": {
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleRustoreRelease",
+        "env": {
+          "APP_DISTRIBUTION": "rustore"
+        }
+      }
+    },
+    "play": {
+      "android": {
+        "buildType": "app-bundle",
+        "gradleCommand": ":app:bundlePlayRelease",
+        "env": {
+          "APP_DISTRIBUTION": "play"
+        }
+      }
+    },
+    "production": {
+      "extends": "rustore"
+    }
+  }
+}

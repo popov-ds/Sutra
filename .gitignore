@@ -31,11 +31,19 @@ yarn-error.*
 *.pem
 
 # local env files
+.env
 .env*.local
 
 # typescript
 *.tsbuildinfo
+.test-dist/
 
 # generated native folders
 /ios
 /android
+
+# Android upload key. Losing it blocks updates of an already installed app.
+/credentials
+
+# Local release APK
+/dist

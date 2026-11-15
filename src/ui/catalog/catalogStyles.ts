@@ -1,0 +1,57 @@
+import { StyleSheet } from 'react-native';
+
+import { theme } from '@/ui/theme';
+
+export const catalogStyles = StyleSheet.create({
+  root: { backgroundColor: theme.bg, flex: 1 },
+  content: { gap: 10, padding: 16, paddingBottom: 24 },
+  empty: { color: theme.muted, fontSize: 16, lineHeight: 22 },
+  row: {
+    backgroundColor: theme.card,
+    borderColor: theme.line,
+    borderRadius: 14,
+    borderWidth: 1,
+    gap: 4,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  rowOn: { backgroundColor: theme.ink, borderColor: theme.ink },
+  rowTitle: { color: theme.ink, fontSize: 16, fontWeight: '700' },
+  rowTitleOn: { color: theme.white },
+  rowMeta: { color: theme.muted, fontSize: 14 },
+  rowMetaOn: { color: '#D5EFEB' },
+  form: {
+    backgroundColor: theme.white,
+    borderColor: theme.line,
+    borderRadius: 16,
+    borderWidth: 1,
+    gap: 12,
+    marginTop: 8,
+    padding: 14,
+  },
+  formTitle: { color: theme.ink, fontSize: 17, fontWeight: '700' },
+  formActions: { flexDirection: 'row', gap: 8 },
+  toolbar: {
+    backgroundColor: theme.card,
+    borderTopColor: theme.line,
+    borderTopWidth: 1,
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  tool: {
+    alignItems: 'center',
+    backgroundColor: theme.white,
+    borderColor: theme.line,
+    borderRadius: 10,
+    borderWidth: 1,
+    flex: 1,
+    paddingVertical: 10,
+  },
+  toolDisabled: { opacity: 0.4 },
+  toolDanger: { borderColor: theme.danger },
+  toolText: { color: theme.ink, fontSize: 13, fontWeight: '700' },
+  toolTextDanger: { color: theme.danger },
+  error: { color: theme.danger },
+});
