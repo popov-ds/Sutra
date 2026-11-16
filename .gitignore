@@ -1,49 +1,41 @@
-# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+# App (Expo / React Native)
+Android/node_modules/
+Android/.expo/
+Android/dist/
+Android/web-build/
+Android/expo-env.d.ts
 
-# dependencies
-node_modules/
+# Native generated (Continuous Native Generation)
+Android/ios/
+Android/android/
 
-# Expo
-.expo/
-dist/
-web-build/
-expo-env.d.ts
+Android/.kotlin/
+Android/*.orig.*
+Android/.metro-health-check*
 
-# Native
-.kotlin/
-*.orig.*
-*.jks
-*.p8
-*.p12
-*.key
-*.mobileprovision
+# Secrets and keys
+Android/.env
+Android/.env*.local
+Android/credentials/
+Android/*.jks
+Android/*.p8
+Android/*.p12
+Android/*.key
+Android/*.mobileprovision
+Android/*.pem
 
-# Metro
-.metro-health-check*
+# Build artifacts
+Android/.test-dist/
+Android/.tsbuildinfo
+Android/dist/
 
-# debug
-npm-debug.*
-yarn-debug.*
-yarn-error.*
+# Publication assets (local only)
+Input/
 
-# macOS
+# OS
 .DS_Store
-*.pem
 
-# local env files
-.env
-.env*.local
-
-# typescript
-*.tsbuildinfo
-.test-dist/
-
-# generated native folders
-/ios
-/android
-
-# Android upload key. Losing it blocks updates of an already installed app.
-/credentials
-
-# Local release APK
-/dist
+# debug logs
+Android/npm-debug.*
+Android/yarn-debug.*
+Android/yarn-error.*
