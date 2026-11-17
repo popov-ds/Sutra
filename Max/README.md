@@ -1,6 +1,6 @@
 # Sutra — бот MAX
 
-CRM **Sutra** в мессенджере MAX по той же схеме, что `D:\Partners\Projects\YogaSheduler\Telegram`:
+CRM **Sutra** в мессенджере MAX:
 
 | Зона | Что делает |
 |------|------------|
@@ -31,7 +31,7 @@ npm start
 
 В кабинете MAX: URL Mini App = `PUBLIC_BASE_URL/miniapp/`, webhook = `POST …/webhooks/max`.
 
-## VPS (рядом с solver / Yoga)
+## VPS
 
 Каталог **`/opt/SutraMaxBot`**, порт **`127.0.0.1:18081`**, поддомен по умолчанию `sutra.max.master-solver.ru`. Подробно: [docs/deploy-adminvps.md](docs/deploy-adminvps.md).
 
