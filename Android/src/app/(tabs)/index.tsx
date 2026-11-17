@@ -20,71 +20,71 @@ export default function TodayScreen() {
   const today = data?.today ?? todayIso();
 
   return (
-    <ScrollView contentContainerStyle={styles.content}>
-      <View style={styles.pager}>
-        <PagerButton label="‹" onPress={() => setDay((current) => addCalendarDays(current, -1))} />
-        <Pressable onPress={() => setDay(today)} style={styles.dayButton}>
-          <Text style={styles.dayTitle}>{day === today ? text.today : formatLongDate(day, language)}</Text>
-          <Text style={styles.daySub}>{formatRuDate(day)}</Text>
-        </Pressable>
-        <PagerButton label="›" onPress={() => setDay((current) => addCalendarDays(current, 1))} />
+    <View style={styles.root}>
+      <View style={styles.pagerBar}>
+        <View style={styles.pager}>
+          <PagerButton label="‹" onPress={() => setDay((current) => addCalendarDays(current, -1))} />
+          <Pressable onPress={() => setDay(today)} style={styles.dayButton}>
+            <Text style={styles.dayTitle}>{day === today ? text.today : formatLongDate(day, language)}</Text>
+            <Text style={styles.daySub}>{formatRuDate(day)}</Text>
+          </Pressable>
+          <PagerButton label="›" onPress={() => setDay((current) => addCalendarDays(current, 1))} />
+        </View>
       </View>
 
-      <NotificationsDisabledBanner />
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <NotificationsDisabledBanner />
 
-      {error ? <Text style={styles.error}>{error}</Text> : null}
-      {loading && !data ? <ActivityIndicator color={theme.service} /> : null}
+        {error ? <Text style={styles.error}>{error}</Text> : null}
+        {loading && !data ? <ActivityIndicator color={theme.service} /> : null}
 
-      {data && day === today && data.overdue.length > 0 ? (
-        <View style={styles.group}>
-          <Text style={styles.overdueTitle}>{text.overdue(data.overdue.length)}</Text>
-          {data.overdue.map((task) => (
-            <TaskCard
-              key={task.id}
-              task={task}
-              today={today}
-              onOpen={() => router.push({ pathname: '/client/[id]', params: { id: task.clientId } })}
-              onComplete={() => {
-                void completeTask(db, task.id).catch((caught: unknown) => {
-                  console.warn(caught);
-                });
-              }}
-            />
-          ))}
-        </View>
-      ) : null}
+        {data && day === today && data.overdue.length > 0 ? (
+          <View style={styles.group}>
+            <Text style={styles.overdueTitle}>{text.overdue(data.overdue.length)}</Text>
+            {data.overdue.map((task) => (
+              <TaskCard
+                key={task.id}
+                task={task}
+                today={today}
+                onOpen={() => router.push({ pathname: '/client/[id]', params: { id: task.clientId } })}
+                onComplete={() => {
+                  void completeTask(db, task.id).catch((caught: unknown) => {
+                    console.warn(caught);
+                  });
+                }}
+              />
+            ))}
+          </View>
+        ) : null}
 
-      {data && data.tasks.length === 0 ? (
-        <Text style={styles.empty}>
-          {text.noTouches}
-        </Text>
-      ) : null}
+        {data && data.tasks.length === 0 ? <Text style={styles.empty}>{text.noTouches}</Text> : null}
 
-      {data
-        ? TASK_CATEGORIES.map((category) => {
-            const tasks = data.tasks.filter((task) => task.category === category);
-            if (tasks.length === 0) return null;
-            return (
-              <View key={category} style={styles.group}>
-                <Text style={styles.groupTitle}>{text.category[category]}</Text>
-                {tasks.map((task) => (
-                  <TaskCard
-                    key={task.id}
-                    task={task}
-                    today={today}
-                    onOpen={() => router.push({ pathname: '/client/[id]', params: { id: task.clientId } })}
-                    onComplete={() => {
-                      void completeTask(db, task.id).catch((caught: unknown) => {
-                        console.warn(caught);
-                      });
-                    }}
-                  />
-                ))}
-              </View>
-            );
-          })
-        : null}
-    </ScrollView>
+        {data
+          ? TASK_CATEGORIES.map((category) => {
+              const tasks = data.tasks.filter((task) => task.category === category);
+              if (tasks.length === 0) return null;
+              return (
+                <View key={category} style={styles.group}>
+                  <Text style={styles.groupTitle}>{text.category[category]}</Text>
+                  {tasks.map((task) => (
+                    <TaskCard
+                      key={task.id}
+                      task={task}
+                      today={today}
+                      onOpen={() => router.push({ pathname: '/client/[id]', params: { id: task.clientId } })}
+                      onComplete={() => {
+                        void completeTask(db, task.id).catch((caught: unknown) => {
+                          console.warn(caught);
+                        });
+                      }}
+                    />
+                  ))}
+                </View>
+              );
+            })
+          : null}
+      </ScrollView>
+    </View>
   );
 }
 
@@ -97,6 +97,14 @@ function PagerButton({ label, onPress }: { label: string; onPress: () => void })
 }
 
 const styles = StyleSheet.create({
+  root: { backgroundColor: theme.bg, flex: 1 },
+  pagerBar: {
+    backgroundColor: theme.bg,
+    borderBottomColor: theme.line,
+    borderBottomWidth: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
   content: { gap: 16, padding: 16, paddingBottom: 32 },
   pager: { alignItems: 'center', flexDirection: 'row', gap: 8 },
   pagerButton: {

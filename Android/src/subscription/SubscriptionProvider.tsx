@@ -1,8 +1,11 @@
 import { useSQLiteContext } from 'expo-sqlite';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
+import { restoreProSubscription } from '@/billing';
+import { isRuStorePayNativeLinked } from '@/billing/ruStoreApi';
 import { loadSubscriptionTier, peekSubscriptionTier, saveSubscriptionTier } from '@/data/subscription';
 import { subscribeData } from '@/data/events';
+import { isRuStoreBuild } from '@/config/distribution';
 import { FREE_RECORD_LIMIT, isProTier, type SubscriptionTier } from '@/domain/plan';
 
 type SubscriptionContextValue = {
@@ -40,6 +43,24 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       });
     void load();
     return subscribeData(load);
+  }, [db]);
+
+  useEffect(() => {
+    if (!isRuStoreBuild() || !isRuStorePayNativeLinked()) return;
+    let cancelled = false;
+    void restoreProSubscription()
+      .then((tier) => {
+        if (cancelled || !isProTier(tier)) return;
+        void saveSubscriptionTier(db, tier).then(() => {
+          if (!cancelled) setTierState(tier);
+        });
+      })
+      .catch(() => {
+        /* keep locally stored tier */
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [db]);
 
   const value = useMemo(

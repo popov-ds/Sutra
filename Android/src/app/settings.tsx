@@ -3,8 +3,10 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
+import { purchaseProPromoSubscription, purchaseProSubscription } from '@/billing';
+import { RuStoreBillingError } from '@/billing/rustore';
 import { showDevTierTools } from '@/config/devTools';
-import { isPlayBuild } from '@/config/distribution';
+import { isPlayBuild, isRuStoreBuild } from '@/config/distribution';
 import { runCloudSync } from '@/data/subscription';
 import { loadSession, sendEmailOtp, signOutCloud, verifyEmailOtp } from '@/data/syncAuth';
 import { getSupabase } from '@/lib/supabase';
@@ -14,6 +16,7 @@ import { useLanguage } from '@/i18n/LanguageProvider';
 import { translateError } from '@/i18n/text';
 import { useSubscription } from '@/subscription/SubscriptionProvider';
 import { theme } from '@/ui/theme';
+import { ProPlanPickerModal } from '@/ui/billing/ProPlanPickerModal';
 import { Button, Notice } from '@/ui/ui';
 
 const LANGUAGES: AppLanguage[] = ['ru', 'en'];
@@ -29,10 +32,12 @@ export default function SettingsScreen() {
   const [cloudCode, setCloudCode] = useState('');
   const [signedInEmail, setSignedInEmail] = useState<string | null>(null);
   const [authBusy, setAuthBusy] = useState(false);
+  const [purchaseBusy, setPurchaseBusy] = useState(false);
+  const [proPickerOpen, setProPickerOpen] = useState(false);
+  const [proPickerNotice, setProPickerNotice] = useState<string | null>(null);
   const cloudEnabled = isSupabaseConfigured();
   const devTools = showDevTierTools();
   const freeAdsLine = isPlayBuild() ? text.freeFeatureAdsPlay : text.freeFeatureAds;
-  const proPurchaseNotice = isPlayBuild() ? text.proPurchaseSoonPlay : text.proPurchaseSoon;
 
   useEffect(() => {
     if (!cloudEnabled) return;
@@ -84,6 +89,55 @@ export default function SettingsScreen() {
     }
   };
 
+  const openProPlanPicker = () => {
+    if (purchaseBusy) return;
+    setProPickerNotice(null);
+    setProPickerOpen(true);
+  };
+
+  const finishProPurchase = async (
+    purchase: () => Promise<'free' | 'pro'>,
+    options?: { promoFlow?: boolean },
+  ) => {
+    if (purchaseBusy) return;
+    setPurchaseBusy(true);
+    setNotice(null);
+    if (options?.promoFlow) setProPickerNotice(null);
+    try {
+      const nextTier = await purchase();
+      await setTier(nextTier);
+      if (nextTier === 'pro') {
+        setProPickerOpen(false);
+        setProPickerNotice(null);
+        setNotice(text.proPurchaseSuccess);
+      } else {
+        setNotice(text.proRestoreNone);
+      }
+    } catch (caught) {
+      if (caught instanceof RuStoreBillingError && caught.code === 'cancelled') {
+        const message = text.proPurchaseCancelled;
+        if (options?.promoFlow) setProPickerNotice(message);
+        else setNotice(message);
+      } else if (caught instanceof RuStoreBillingError && caught.code === 'promo_not_found') {
+        setProPickerNotice(text.promoNotFound);
+      } else {
+        const message = translateError(caught, text, text.proPurchaseFailed);
+        if (options?.promoFlow) setProPickerNotice(message);
+        else setNotice(message);
+      }
+    } finally {
+      setPurchaseBusy(false);
+    }
+  };
+
+  const upgradePro = (productId: string) => {
+    void finishProPurchase(() => purchaseProSubscription(productId));
+  };
+
+  const applyPromo = (code: string) => {
+    void finishProPurchase(() => purchaseProPromoSubscription(code), { promoFlow: true });
+  };
+
   const syncNow = async () => {
     setSyncing(true);
     setNotice(null);
@@ -98,6 +152,7 @@ export default function SettingsScreen() {
   };
 
   return (
+    <>
     <ScrollView contentContainerStyle={styles.content}>
       <Stack.Screen options={{ title: text.settings }} />
 
@@ -138,13 +193,17 @@ export default function SettingsScreen() {
       <Text style={styles.section}>{text.planTitle}</Text>
       <View style={styles.planCard}>
         <Text style={styles.planBadge}>{isPro ? text.planProBadge : text.planFreeBadge}</Text>
-        <Text style={styles.planLead}>{isPro ? text.proPlanLead : text.freePlanLead(freeRecordLimit)}</Text>
+        {isPro ? <Text style={styles.planLead}>{text.proPlanLead}</Text> : null}
         {!isPro ? (
           <>
             <Text style={styles.planBullet}>• {freeAdsLine}</Text>
             <Text style={styles.planBullet}>• {text.freeFeatureLimit(freeRecordLimit)}</Text>
             <Text style={styles.planBullet}>• {text.freeFeatureNoSync}</Text>
-            <Button label={text.upgradePro} onPress={() => setNotice(proPurchaseNotice)} />
+            <Button
+              label={purchaseBusy ? text.proPurchasing : text.upgradePro}
+              onPress={() => (isRuStoreBuild() ? openProPlanPicker() : void upgradePro('pro_month'))}
+              disabled={purchaseBusy}
+            />
           </>
         ) : (
           <>
@@ -210,6 +269,20 @@ export default function SettingsScreen() {
       <Notice text={notice} />
       {devTools ? <Text style={styles.devNote}>DEV: tier = {tier}</Text> : null}
     </ScrollView>
+
+    <ProPlanPickerModal
+      busy={purchaseBusy}
+      notice={proPickerNotice}
+      onApplyPromo={applyPromo}
+      onClearNotice={() => setProPickerNotice(null)}
+      onClose={() => {
+        setProPickerOpen(false);
+        setProPickerNotice(null);
+      }}
+      onSelectPlan={upgradePro}
+      visible={proPickerOpen}
+    />
+    </>
   );
 }
 

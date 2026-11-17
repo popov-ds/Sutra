@@ -10,6 +10,7 @@ import { theme } from '@/ui/theme';
 import { Button, Field, Notice } from '@/ui/ui';
 import { useLoader } from '@/ui/useLoader';
 
+import { CatalogEditorModal } from './CatalogEditorModal';
 import { catalogStyles as styles } from './catalogStyles';
 
 type EditorMode = 'add' | 'edit' | null;
@@ -134,7 +135,7 @@ export function ProductCatalog({
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         {error ? <Text style={styles.error}>{error}</Text> : null}
         {loading && !data ? <ActivityIndicator color={theme.service} /> : null}
-        {data && data.length === 0 && !mode ? <Text style={styles.empty}>{text.emptyProducts}</Text> : null}
+        {data && data.length === 0 ? <Text style={styles.empty}>{text.emptyProducts}</Text> : null}
         {data?.map((product) => (
           <ProductRow
             key={product.id}
@@ -145,19 +146,18 @@ export function ProductCatalog({
           />
         ))}
 
-        {mode ? (
-          <View style={styles.form}>
-            <Text style={styles.formTitle}>{mode === 'add' ? text.addProduct : text.editProduct}</Text>
-            <Field label={text.productName} value={name} onChangeText={setName} />
-            <Field label={text.courseDays} value={days} onChangeText={setDays} keyboardType="number-pad" />
-            <View style={styles.formActions}>
-              <Button label={text.back} tone="quiet" onPress={resetEditor} />
-              <Button label={saving ? text.saving : text.saveProduct} onPress={() => void save()} disabled={saving} />
-            </View>
-          </View>
-        ) : null}
         <Notice text={notice} />
       </ScrollView>
+
+      <CatalogEditorModal visible={mode !== null} onClose={resetEditor}>
+        <Text style={styles.formTitle}>{mode === 'add' ? text.addProduct : text.editProduct}</Text>
+        <Field label={text.productName} value={name} onChangeText={setName} />
+        <Field label={text.courseDays} value={days} onChangeText={setDays} keyboardType="number-pad" />
+        <View style={styles.formActions}>
+          <Button label={text.back} tone="quiet" onPress={resetEditor} />
+          <Button label={saving ? text.saving : text.saveProduct} onPress={() => void save()} disabled={saving} />
+        </View>
+      </CatalogEditorModal>
 
       <View style={styles.toolbar}>
         <ToolbarButton label={text.add} onPress={startAdd} />

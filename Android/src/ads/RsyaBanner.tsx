@@ -6,6 +6,7 @@ import {
   requireNativeComponent,
   StyleSheet,
   Text,
+  UIManager,
   View,
   type NativeSyntheticEvent,
   type ViewProps,
@@ -26,10 +27,14 @@ type NativeBannerProps = ViewProps & {
   onAdLoaded?: (event: NativeSyntheticEvent<RsyaAdEvent>) => void;
 };
 
-const YandexBannerView =
-  Platform.OS === 'android'
-    ? requireNativeComponent<NativeBannerProps>('YandexBannerView')
-    : null;
+function nativeYandexBannerAvailable(): boolean {
+  if (Platform.OS !== 'android') return false;
+  return UIManager.getViewManagerConfig('YandexBannerView') != null;
+}
+
+const YandexBannerView = nativeYandexBannerAvailable()
+  ? requireNativeComponent<NativeBannerProps>('YandexBannerView')
+  : null;
 
 const DEFAULT_SLOT_HEIGHT = 50;
 const WRAP_PADDING_V = 4;

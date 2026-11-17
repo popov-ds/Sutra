@@ -13,6 +13,7 @@ import { useLanguage } from '@/i18n/LanguageProvider';
 import { translateError, visibleTask } from '@/i18n/text';
 import { CatalogPickerModal } from '@/ui/catalog/CatalogPickerModal';
 import { CatalogSelectField } from '@/ui/catalog/CatalogSelectField';
+import { SCREEN_FOOTER_SCROLL_PAD, ScreenFooter } from '@/ui/ScreenFooter';
 import { categoryColor, theme } from '@/ui/theme';
 import { Button, DatePickerField, Notice } from '@/ui/ui';
 import { useLoader } from '@/ui/useLoader';
@@ -35,7 +36,6 @@ export default function NewPurchaseScreen() {
   const [purchasedOn, setPurchasedOn] = useState(todayIso());
   const [notice, setNotice] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [created, setCreated] = useState<TaskDraft[] | null>(null);
 
   const selectedProduct = data?.products.find((item) => item.id === productId) ?? null;
   const productValueLabel = selectedProduct
@@ -68,42 +68,21 @@ export default function NewPurchaseScreen() {
     setSaving(true);
     setNotice(null);
     try {
-      const recorded = await recordPurchase(db, {
+      await recordPurchase(db, {
         clientId,
         productId,
         purchasedOn: parseUserDate(purchasedOn),
       });
-      setCreated(recorded.tasks);
+      router.back();
     } catch (caught) {
       setNotice(translateError(caught, text, text.recordFailed));
       setSaving(false);
     }
   };
 
-  if (created) {
-    return (
-      <ScrollView contentContainerStyle={styles.content}>
-        <Stack.Screen options={{ title: text.touchesCreated }} />
-        <Text style={styles.lead}>{text.touchesCreatedLead(created.length)}</Text>
-        {created.map((task) => {
-          const colors = categoryColor[task.category];
-          return (
-            <View key={task.id} style={[styles.preview, { borderLeftColor: colors.ink }]}>
-              <Text style={[styles.badge, { color: colors.ink }]}>
-                {formatRuDate(task.touchOn)} · {text.category[task.category]}
-              </Text>
-              <Text style={styles.previewTitle}>{visibleTask(task, text, language).title}</Text>
-            </View>
-          );
-        })}
-        <Button label={text.done} onPress={() => router.back()} />
-      </ScrollView>
-    );
-  }
-
   if (!clientId) {
     return (
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={styles.contentPlain}>
         <Stack.Screen options={{ title: text.newPurchase }} />
         <Text style={styles.error}>{text.missingClient}</Text>
         <Button label={text.back} tone="quiet" onPress={() => router.back()} />
@@ -113,41 +92,46 @@ export default function NewPurchaseScreen() {
 
   return (
     <>
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <Stack.Screen options={{ title: text.newPurchase }} />
-        {error ? <Text style={styles.error}>{error}</Text> : null}
-        {loading && !data ? <ActivityIndicator color={theme.service} /> : null}
+      <View style={styles.root}>
+        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+          <Stack.Screen options={{ title: text.newPurchase }} />
+          {error ? <Text style={styles.error}>{error}</Text> : null}
+          {loading && !data ? <ActivityIndicator color={theme.service} /> : null}
 
-        <CatalogSelectField
-          label={text.productLabel}
-          valueLabel={productValueLabel}
-          placeholder={text.chooseProduct}
-          onPress={() => setProductPickerOpen(true)}
-        />
-        {data && data.products.length === 0 ? <Text style={styles.hint}>{text.noProductsForPurchase}</Text> : null}
+          <CatalogSelectField
+            label={text.productLabel}
+            valueLabel={productValueLabel}
+            placeholder={text.chooseProduct}
+            onPress={() => setProductPickerOpen(true)}
+          />
+          {data && data.products.length === 0 ? <Text style={styles.hint}>{text.noProductsForPurchase}</Text> : null}
 
-        <DatePickerField label={text.purchaseDate} valueIso={purchasedOn} onChangeIso={setPurchasedOn} hint={text.dateHint} />
-        <Button label={text.today} tone="quiet" onPress={() => setPurchasedOn(todayIso())} />
+          <DatePickerField label={text.purchaseDate} valueIso={purchasedOn} onChangeIso={setPurchasedOn} hint={text.dateHint} />
+          <Button label={text.today} tone="quiet" onPress={() => setPurchasedOn(todayIso())} />
 
-        {preview.error ? <Text style={styles.error}>{preview.error}</Text> : null}
-        {preview.tasks.length > 0 ? (
-          <View style={styles.block}>
-            <Text style={styles.label}>{text.willCreate}</Text>
-            {preview.tasks.map((task) => (
-              <Text key={`${task.type}-${task.touchOn}`} style={styles.previewLine}>
-                {formatRuDate(task.touchOn)} · {text.category[task.category]}
-              </Text>
-            ))}
+          {preview.error ? <Text style={styles.error}>{preview.error}</Text> : null}
+          {preview.tasks.length > 0 ? (
+            <View style={styles.block}>
+              <Text style={styles.label}>{text.willCreate}</Text>
+              {preview.tasks.map((task) => (
+                <TouchPreviewCard key={`${task.type}-${task.touchOn}`} task={task} text={text} language={language} />
+              ))}
+            </View>
+          ) : null}
+
+          <Notice text={notice} />
+        </ScrollView>
+
+        <ScreenFooter>
+          <View style={styles.footerBtn}>
+            <Button
+              label={saving ? text.recording : text.recordPurchaseAction}
+              onPress={() => void save()}
+              disabled={saving || !productId || preview.tasks.length === 0}
+            />
           </View>
-        ) : null}
-
-        <Notice text={notice} />
-        <Button
-          label={saving ? text.recording : text.recordPurchaseAction}
-          onPress={() => void save()}
-          disabled={saving || !productId || preview.tasks.length === 0}
-        />
-      </ScrollView>
+        </ScreenFooter>
+      </View>
 
       <CatalogPickerModal
         visible={productPickerOpen}
@@ -161,15 +145,45 @@ export default function NewPurchaseScreen() {
   );
 }
 
+function TouchPreviewCard({
+  task,
+  text,
+  language,
+}: {
+  task: TaskDraft;
+  text: ReturnType<typeof useLanguage>['text'];
+  language: ReturnType<typeof useLanguage>['language'];
+}) {
+  const colors = categoryColor[task.category];
+  const visible = visibleTask(task, text, language);
+  return (
+    <View style={[styles.preview, { borderLeftColor: colors.ink }]}>
+      <Text style={[styles.badge, { color: colors.ink }]}>
+        {formatRuDate(task.touchOn)} · {text.category[task.category]}
+      </Text>
+      <Text style={styles.previewTitle}>{visible.title}</Text>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
-  content: { gap: 12, padding: 16, paddingBottom: 40 },
+  root: { backgroundColor: theme.bg, flex: 1 },
+  content: { gap: 12, padding: 16, paddingBottom: SCREEN_FOOTER_SCROLL_PAD },
+  contentPlain: { gap: 12, padding: 16, paddingBottom: 40 },
   label: { color: theme.muted, fontSize: 13, fontWeight: '600' },
   block: { gap: 10 },
   hint: { color: theme.muted, fontSize: 14, lineHeight: 20 },
-  preview: { backgroundColor: theme.card, borderColor: theme.line, borderLeftWidth: 4, borderRadius: 14, borderWidth: 1, gap: 6, padding: 12 },
+  preview: {
+    backgroundColor: theme.card,
+    borderColor: theme.line,
+    borderLeftWidth: 4,
+    borderRadius: 14,
+    borderWidth: 1,
+    gap: 6,
+    padding: 12,
+  },
   badge: { fontSize: 13, fontWeight: '700' },
   previewTitle: { color: theme.ink, fontSize: 15, lineHeight: 21 },
-  previewLine: { color: theme.ink, fontSize: 15 },
-  lead: { color: theme.ink, fontSize: 16, lineHeight: 22 },
   error: { color: theme.danger, fontSize: 14 },
+  footerBtn: { flex: 1, minWidth: 0 },
 });

@@ -13,6 +13,7 @@ import { useStrings } from '@/i18n/LanguageProvider';
 import { translateError } from '@/i18n/text';
 import { CatalogPickerModal } from '@/ui/catalog/CatalogPickerModal';
 import { CatalogSelectField } from '@/ui/catalog/CatalogSelectField';
+import { SCREEN_FOOTER_SCROLL_PAD, ScreenFooter } from '@/ui/ScreenFooter';
 import { theme } from '@/ui/theme';
 import { Button, Field, Notice, SectionTitle, TaskCard } from '@/ui/ui';
 import { useLoader } from '@/ui/useLoader';
@@ -103,104 +104,118 @@ export default function ClientCardScreen() {
 
   return (
     <>
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <Stack.Screen options={{ title: draft?.name || data?.client.name || text.client }} />
-        {error ? <Text style={styles.error}>{error}</Text> : null}
-        {loading && !draft ? <ActivityIndicator color={theme.service} /> : null}
-        {draft ? (
-          <>
-            <Field label={text.name} value={draft.name} onChangeText={(name) => setDraft({ ...draft, name })} />
-            <Field
-              label={text.phone}
-              value={draft.phone}
-              onChangeText={(phone) => setDraft({ ...draft, phone })}
-              keyboardType="phone-pad"
-            />
-            {draft.phone ? (
-              <Pressable onPress={() => void Linking.openURL(`tel:${draft.phone.replace(/[^\d+]/g, '')}`)}>
-                <Text style={styles.call}>{text.call}</Text>
-              </Pressable>
-            ) : null}
+      <View style={styles.root}>
+        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+          <Stack.Screen options={{ title: draft?.name || data?.client.name || text.client }} />
+          {error ? <Text style={styles.error}>{error}</Text> : null}
+          {loading && !draft ? <ActivityIndicator color={theme.service} /> : null}
+          {draft ? (
+            <>
+              <Field label={text.name} value={draft.name} onChangeText={(name) => setDraft({ ...draft, name })} />
+              <Field
+                label={text.phone}
+                value={draft.phone}
+                onChangeText={(phone) => setDraft({ ...draft, phone })}
+                keyboardType="phone-pad"
+              />
+              {draft.phone ? (
+                <Pressable onPress={() => void Linking.openURL(`tel:${draft.phone.replace(/[^\d+]/g, '')}`)}>
+                  <Text style={styles.call}>{text.call}</Text>
+                </Pressable>
+              ) : null}
 
-            <CatalogSelectField
-              label={text.clientRequestLabel}
-              valueLabel={requestLabel}
-              placeholder={text.chooseClientRequest}
-              onPress={() => setRequestPickerOpen(true)}
-            />
+              <CatalogSelectField
+                label={text.clientRequestLabel}
+                valueLabel={requestLabel}
+                placeholder={text.chooseClientRequest}
+                onPress={() => setRequestPickerOpen(true)}
+              />
 
-            <Field
-              label={text.additionalInfo}
-              value={draft.additionalInfo}
-              onChangeText={(additionalInfo) => setDraft({ ...draft, additionalInfo })}
-              multiline
-            />
+              <Field
+                label={text.additionalInfo}
+                value={draft.additionalInfo}
+                onChangeText={(additionalInfo) => setDraft({ ...draft, additionalInfo })}
+                multiline
+              />
 
-            <View style={styles.block}>
-              <Text style={styles.label}>{text.funnel}</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.statuses}>
-                {CLIENT_STATUSES.map((status) => {
-                  const selected = draft.status === status;
-                  return (
+              <View style={styles.block}>
+                <Text style={styles.label}>{text.funnel}</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.statuses}>
+                  {CLIENT_STATUSES.map((status) => {
+                    const selected = draft.status === status;
+                    return (
+                      <Pressable
+                        key={status}
+                        accessibilityRole="button"
+                        accessibilityLabel={text.statusLabel[status]}
+                        accessibilityState={{ selected }}
+                        onPress={() => void changeStatus(status)}
+                        style={[styles.chip, selected && styles.chipOn]}
+                      >
+                        <Text style={[styles.chipText, selected && styles.chipTextOn]}>{text.statusLabel[status]}</Text>
+                      </Pressable>
+                    );
+                  })}
+                </ScrollView>
+                <Text style={styles.hint}>{text.funnelHint}</Text>
+              </View>
+
+              <Notice text={notice} />
+
+              <View style={styles.block}>
+                <SectionTitle>{text.purchases}</SectionTitle>
+                {data && data.purchases.length === 0 ? <Text style={styles.hint}>{text.noPurchases}</Text> : null}
+                {data?.purchases.map((purchase) => (
+                  <View key={purchase.id} style={styles.purchase}>
+                    <View style={styles.purchaseBody}>
+                      <Text style={styles.purchaseTitle}>{purchase.productName}</Text>
+                      <Text style={styles.hint}>
+                        {text.purchasedOn(formatRuDate(purchase.purchasedOn), formatRuDate(purchase.courseEndsOn))}
+                      </Text>
+                    </View>
                     <Pressable
-                      key={status}
                       accessibilityRole="button"
-                      accessibilityLabel={text.statusLabel[status]}
-                      accessibilityState={{ selected }}
-                      onPress={() => void changeStatus(status)}
-                      style={[styles.chip, selected && styles.chipOn]}
+                      accessibilityLabel={text.deletePurchase}
+                      hitSlop={8}
+                      onPress={() => confirmDeletePurchase(purchase.id, purchase.productName)}
+                      style={styles.deletePurchase}
                     >
-                      <Text style={[styles.chipText, selected && styles.chipTextOn]}>{text.statusLabel[status]}</Text>
+                      <MaterialCommunityIcons name="trash-can-outline" size={22} color={theme.danger} />
                     </Pressable>
-                  );
-                })}
-              </ScrollView>
-              <Text style={styles.hint}>{text.funnelHint}</Text>
+                  </View>
+                ))}
+              </View>
+
+              <View style={styles.block}>
+                <SectionTitle>{text.timeline}</SectionTitle>
+                {data && data.tasks.length === 0 ? <Text style={styles.hint}>{text.emptyTimeline}</Text> : null}
+                {data?.tasks.map((task) => (
+                  <TaskCard key={task.id} task={task} today={todayIso()} />
+                ))}
+              </View>
+            </>
+          ) : null}
+        </ScrollView>
+
+        {draft && clientId ? (
+          <ScreenFooter>
+            <View style={styles.footerBtn}>
+              <Button
+                label={saving ? text.saving : text.saveProfile}
+                onPress={() => void saveProfile()}
+                disabled={saving}
+              />
             </View>
-
-            <Button label={saving ? text.saving : text.saveProfile} onPress={() => void saveProfile()} disabled={saving} />
-            <Notice text={notice} />
-
-            <View style={styles.block}>
-              <SectionTitle>{text.purchases}</SectionTitle>
+            <View style={styles.footerBtn}>
               <Button
                 label={text.recordPurchase}
+                tone="quiet"
                 onPress={() => router.push({ pathname: '/purchase/new', params: { clientId } })}
               />
-              {data && data.purchases.length === 0 ? <Text style={styles.hint}>{text.noPurchases}</Text> : null}
-              {data?.purchases.map((purchase) => (
-                <View key={purchase.id} style={styles.purchase}>
-                  <View style={styles.purchaseBody}>
-                    <Text style={styles.purchaseTitle}>{purchase.productName}</Text>
-                    <Text style={styles.hint}>
-                      {text.purchasedOn(formatRuDate(purchase.purchasedOn), formatRuDate(purchase.courseEndsOn))}
-                    </Text>
-                  </View>
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel={text.deletePurchase}
-                    hitSlop={8}
-                    onPress={() => confirmDeletePurchase(purchase.id, purchase.productName)}
-                    style={styles.deletePurchase}
-                  >
-                    <MaterialCommunityIcons name="trash-can-outline" size={22} color={theme.danger} />
-                  </Pressable>
-                </View>
-              ))}
             </View>
-
-            <View style={styles.block}>
-              <SectionTitle>{text.timeline}</SectionTitle>
-              {data && data.tasks.length === 0 ? (
-                <Text style={styles.hint}>{text.emptyTimeline}</Text>
-              ) : null}
-              {data?.tasks.map((task) => (
-                <TaskCard key={task.id} task={task} today={todayIso()} />
-              ))}
-            </View>
-          </>
+          </ScreenFooter>
         ) : null}
-      </ScrollView>
+      </View>
 
       <CatalogPickerModal
         visible={requestPickerOpen}
@@ -227,11 +242,19 @@ function toDraft(client: Client): Draft {
 }
 
 const styles = StyleSheet.create({
-  content: { gap: 16, padding: 16, paddingBottom: 40 },
+  root: { backgroundColor: theme.bg, flex: 1 },
+  content: { gap: 16, padding: 16, paddingBottom: SCREEN_FOOTER_SCROLL_PAD },
   block: { gap: 10 },
   label: { color: theme.muted, fontSize: 13, fontWeight: '600' },
   statuses: { gap: 8 },
-  chip: { backgroundColor: theme.white, borderColor: theme.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 8 },
+  chip: {
+    backgroundColor: theme.white,
+    borderColor: theme.line,
+    borderRadius: 999,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
   chipOn: { backgroundColor: theme.ink, borderColor: theme.ink },
   chipText: { color: theme.ink, fontSize: 14 },
   chipTextOn: { color: theme.white, fontWeight: '700' },
@@ -251,4 +274,5 @@ const styles = StyleSheet.create({
   deletePurchase: { padding: 10 },
   purchaseTitle: { color: theme.ink, fontSize: 16, fontWeight: '700' },
   error: { color: theme.danger },
+  footerBtn: { flex: 1, minWidth: 0 },
 });

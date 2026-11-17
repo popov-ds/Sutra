@@ -22,6 +22,9 @@ if (-not (Test-Path (Join-Path $ninjaDir 'ninja.exe'))) {
 $capFlavor = $Flavor.Substring(0, 1).ToUpperInvariant() + $Flavor.Substring(1)
 $env:APP_DISTRIBUTION = $Flavor
 
+$androidDir = Join-Path $root 'android'
+& (Join-Path $PSScriptRoot 'ensure-android-local-properties.ps1') -AndroidProjectDir $androidDir
+
 $distFlavor = Join-Path (Join-Path $root 'dist') $Flavor
 New-Item -ItemType Directory -Force -Path $distFlavor | Out-Null
 

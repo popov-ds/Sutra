@@ -1,0 +1,25 @@
+# Прод на VPS рядом с /opt/solver и /opt/YogaShedulerTelegramBot — не трогаем их порты.
+# HTTP бота: host network, только 127.0.0.1:18081 (nginx → отдельный server_name).
+# Запуск: docker compose -f docker-compose.vps.yml up -d --build
+
+name: sutramaxbot
+
+services:
+  bot:
+    build: .
+    command: npm run start:bot
+    network_mode: host
+    env_file: .env
+    environment:
+      NODE_OPTIONS: "--use-system-ca"
+      HTTP_PORT: 18081
+      HTTP_BIND: 127.0.0.1
+      DATA_DIR: /data
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-https://sutra.max.master-solver.ru}
+      MAX_USE_POLLING: ${MAX_USE_POLLING:-1}
+    volumes:
+      - sutramax_data:/data
+    restart: unless-stopped
+
+volumes:
+  sutramax_data:

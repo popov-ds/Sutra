@@ -15,6 +15,9 @@ if (-not (Test-Path (Join-Path $ninjaDir 'ninja.exe'))) {
 
 $capFlavor = $Flavor.Substring(0, 1).ToUpperInvariant() + $Flavor.Substring(1)
 $env:APP_DISTRIBUTION = $Flavor
+
+$androidDir = Join-Path $root 'android'
+& (Join-Path $PSScriptRoot 'ensure-android-local-properties.ps1') -AndroidProjectDir $androidDir
 $env:EXPO_PUBLIC_DEV_TIER_TOOLS = '1'
 $gradleTask = "assemble${capFlavor}Debug"
 

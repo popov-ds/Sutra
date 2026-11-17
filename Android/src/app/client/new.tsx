@@ -7,6 +7,7 @@ import { createClient } from '@/data/clients';
 import { CLIENT_STATUSES, type ClientStatus } from '@/domain/types';
 import { useStrings } from '@/i18n/LanguageProvider';
 import { translateError } from '@/i18n/text';
+import { SCREEN_FOOTER_SCROLL_PAD, ScreenFooter } from '@/ui/ScreenFooter';
 import { theme } from '@/ui/theme';
 import { Button, Field, Notice } from '@/ui/ui';
 
@@ -36,47 +37,60 @@ export default function NewClientScreen() {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-      <Stack.Screen options={{ title: text.newClient }} />
-      <Field label={text.name} value={name} onChangeText={setName} placeholder="Анна" />
-      <Field label={text.phone} value={phone} onChangeText={setPhone} placeholder="+7 900 000-00-00" keyboardType="phone-pad" />
-      <View style={styles.field}>
-        <Text style={styles.label}>{text.status}</Text>
-        <View style={styles.tags}>
-          {CLIENT_STATUSES.map((item) => {
-            const selected = item === status;
-            return (
-              <Pressable
-                key={item}
-                accessibilityRole="button"
-                accessibilityLabel={text.statusLabel[item]}
-                accessibilityState={{ selected }}
-                onPress={() => setStatus(item)}
-                style={[styles.chip, selected && styles.chipOn]}
-              >
-                <Text style={[styles.chipText, selected && styles.chipTextOn]}>{text.statusLabel[item]}</Text>
-              </Pressable>
-            );
-          })}
+    <View style={styles.root}>
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <Stack.Screen options={{ title: text.newClient }} />
+        <Field label={text.name} value={name} onChangeText={setName} placeholder="Анна" />
+        <Field label={text.phone} value={phone} onChangeText={setPhone} placeholder="+7 900 000-00-00" keyboardType="phone-pad" />
+        <View style={styles.field}>
+          <Text style={styles.label}>{text.status}</Text>
+          <View style={styles.tags}>
+            {CLIENT_STATUSES.map((item) => {
+              const selected = item === status;
+              return (
+                <Pressable
+                  key={item}
+                  accessibilityRole="button"
+                  accessibilityLabel={text.statusLabel[item]}
+                  accessibilityState={{ selected }}
+                  onPress={() => setStatus(item)}
+                  style={[styles.chip, selected && styles.chipOn]}
+                >
+                  <Text style={[styles.chipText, selected && styles.chipTextOn]}>{text.statusLabel[item]}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          <Text style={styles.hint}>{text.partnershipLater}</Text>
         </View>
-        <Text style={styles.hint}>
-          {text.partnershipLater}
-        </Text>
-      </View>
-      <Notice text={error} />
-      <Button label={saving ? text.saving : text.createClient} onPress={() => void save()} disabled={saving} />
-    </ScrollView>
+        <Notice text={error} />
+      </ScrollView>
+      <ScreenFooter>
+        <View style={styles.footerBtn}>
+          <Button label={saving ? text.saving : text.createClient} onPress={() => void save()} disabled={saving} />
+        </View>
+      </ScreenFooter>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { gap: 16, padding: 16, paddingBottom: 40 },
+  root: { backgroundColor: theme.bg, flex: 1 },
+  content: { gap: 16, padding: 16, paddingBottom: SCREEN_FOOTER_SCROLL_PAD },
   field: { gap: 8 },
   label: { color: theme.muted, fontSize: 13, fontWeight: '600' },
   tags: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { backgroundColor: theme.white, borderColor: theme.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 8 },
+  chip: {
+    backgroundColor: theme.white,
+    borderColor: theme.line,
+    borderRadius: 999,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
   chipOn: { backgroundColor: theme.ink, borderColor: theme.ink },
   chipText: { color: theme.ink, fontSize: 14 },
   chipTextOn: { color: theme.white, fontWeight: '700' },
   hint: { color: theme.muted, fontSize: 13, lineHeight: 18 },
+  footerBtn: { flex: 1, minWidth: 0 },
 });

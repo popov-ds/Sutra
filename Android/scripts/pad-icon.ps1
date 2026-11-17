@@ -1,13 +1,21 @@
-Add-Type -AssemblyName System.Drawing
+﻿Add-Type -AssemblyName System.Drawing
 
 $assets = Join-Path $PSScriptRoot '..\assets'
+# Adaptive icon safe zone ≈ 66/108 of the mask; use 58% so edges are not clipped on round/squircle launchers.
 $size = 1024
-$scale = 0.66
+$scale = 0.58
 $inner = [int][Math]::Round($size * $scale)
 $bg = [System.Drawing.Color]::FromArgb(255, 13, 70, 55)
-$files = @('icon.png', 'android-icon-foreground.png', 'android-icon-monochrome.png', 'favicon.png')
+$files = @(
+  @{ Name = 'icon.png'; TransparentForeground = $false },
+  @{ Name = 'android-icon-foreground.png'; TransparentForeground = $true },
+  @{ Name = 'android-icon-monochrome.png'; TransparentForeground = $false },
+  @{ Name = 'favicon.png'; TransparentForeground = $false }
+)
 
-foreach ($file in $files) {
+foreach ($entry in $files) {
+  $file = $entry.Name
+  $transparent = [bool]$entry.TransparentForeground
   $path = Join-Path $assets $file
   if (-not (Test-Path $path)) { continue }
 
@@ -22,7 +30,11 @@ foreach ($file in $files) {
     $canvas = New-Object System.Drawing.Bitmap $size, $size
     $graphics = [System.Drawing.Graphics]::FromImage($canvas)
     try {
-      $graphics.Clear($bg)
+      if ($transparent) {
+        $graphics.Clear([System.Drawing.Color]::Transparent)
+      } else {
+        $graphics.Clear($bg)
+      }
       $graphics.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
       $graphics.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::HighQuality
       $x = [int](($size - $inner) / 2)

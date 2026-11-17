@@ -113,6 +113,21 @@ export type AppText = {
   proFeatureUnlimited: string;
   proFeatureSync: string;
   upgradePro: string;
+  upgradeProMonth: string;
+  upgradeProYear: string;
+  proPlanChooseTitle: string;
+  proPlanChooseHint: string;
+  proPlanPeriodMonth: string;
+  proPlanPeriodYear: string;
+  proPlanOfferLabel: (period: string, price: string) => string;
+  promoCodeApply: string;
+  promoCodePlaceholder: string;
+  promoNotFound: string;
+  proPurchasing: string;
+  proPurchaseSuccess: string;
+  proPurchaseFailed: string;
+  proPurchaseCancelled: string;
+  proRestoreNone: string;
   proPurchaseSoon: string;
   proPurchaseSoonPlay: string;
   freeFeatureAdsPlay: string;
@@ -170,7 +185,7 @@ const RU: AppText = {
   status: 'Статус',
   partnershipLater: 'Окно партнерства запускается позже, когда в карточке статус меняют на «Постоянный клиент».',
   saving: 'Сохраняю…',
-  createClient: 'Создать клиента',
+  createClient: 'Сохранить',
   saveClientFailed: 'Не удалось сохранить клиента',
   client: 'Клиент',
   call: 'Позвонить',
@@ -182,7 +197,7 @@ const RU: AppText = {
   statusFailed: 'Не удалось сменить статус',
   partnershipScheduled: (date) => `Задача «Окно партнерства» поставлена на ${date}.`,
   purchases: 'Покупки',
-  recordPurchase: 'Зафиксировать покупку',
+  recordPurchase: 'Покупка',
   noPurchases: 'Покупок пока нет.',
   deletePurchase: 'Удалить',
   deletePurchaseConfirm: (productName) =>
@@ -231,7 +246,7 @@ const RU: AppText = {
   chooseClientAndProduct: 'Выберите клиента и продукт',
   recordFailed: 'Не удалось записать покупку',
   recording: 'Записываю…',
-  recordPurchaseAction: 'Записать покупку',
+  recordPurchaseAction: 'Зафиксировать',
   touchesCreated: 'Касания созданы',
   touchesCreatedLead: (count) => `В календарь легло ${count} задач. Даты посчитаны от дня покупки.`,
   done: 'Готово',
@@ -253,6 +268,21 @@ const RU: AppText = {
   proFeatureUnlimited: 'Без лимита клиентов и справочников',
   proFeatureSync: 'Синхронизация с Supabase (Pro)',
   upgradePro: 'Оформить Pro',
+  upgradeProMonth: 'Pro — месяц',
+  upgradeProYear: 'Pro — год',
+  proPlanChooseTitle: 'Выберите тариф Pro',
+  proPlanChooseHint: 'Месячная или годовая подписка через RuStore.',
+  proPlanPeriodMonth: '1 месяц',
+  proPlanPeriodYear: '1 год',
+  proPlanOfferLabel: (period, price) => `${period}, ${price}`,
+  promoCodeApply: 'Промокод',
+  promoCodePlaceholder: 'Код',
+  promoNotFound: 'Промокод не найден или недействителен.',
+  proPurchasing: 'Открываю оплату…',
+  proPurchaseSuccess: 'Подписка Pro активна.',
+  proPurchaseFailed: 'Не удалось оформить Pro. Установите RuStore и войдите в аккаунт.',
+  proPurchaseCancelled: 'Оплата отменена.',
+  proRestoreNone: 'Активная подписка не найдена.',
   proPurchaseSoon: 'Покупку Pro подключим через RuStore. Пока Pro можно включить в режиме разработки.',
   proPurchaseSoonPlay: 'Покупку Pro подключим через Google Play. Пока Pro можно включить в режиме разработки.',
   freeFeatureAdsPlay: 'Реклама РСЯ внизу экранов',
@@ -328,6 +358,15 @@ const RU: AppText = {
     'Достигнут лимит продуктов в бесплатной версии': 'Достигнут лимит продуктов в бесплатной версии. Оформите Pro.',
     'Достигнут лимит запросов в бесплатной версии': 'Достигнут лимит запросов в бесплатной версии. Оформите Pro.',
     'Облачная синхронизация доступна в Pro': 'Облачная синхронизация доступна в Pro',
+    unavailable: 'Платежи RuStore недоступны. Установите RuStore и войдите в аккаунт.',
+    cancelled: 'Оплата отменена.',
+    payment_failed: 'Оплата не прошла. Попробуйте снова.',
+    unknown: 'Не удалось завершить оплату.',
+    'RuStore billing is not integrated yet': 'Платежи RuStore ещё не подключены в этой сборке.',
+    'RuStore Pay SDK is not linked in this build': 'SDK оплаты RuStore не включён в сборку.',
+    'RuStore payments are unavailable (install RuStore and sign in)':
+      'Платежи недоступны: установите RuStore и войдите в аккаунт.',
+    'RuStore payments are unavailable': 'Платежи RuStore сейчас недоступны.',
   },
 };
 
@@ -442,6 +481,21 @@ const EN: AppText = {
   proFeatureUnlimited: 'Unlimited clients and directories',
   proFeatureSync: 'Supabase sync (Pro)',
   upgradePro: 'Get Pro',
+  upgradeProMonth: 'Pro — monthly',
+  upgradeProYear: 'Pro — yearly',
+  proPlanChooseTitle: 'Choose a Pro plan',
+  proPlanChooseHint: 'Monthly or yearly subscription via RuStore.',
+  proPlanPeriodMonth: '1 month',
+  proPlanPeriodYear: '1 year',
+  proPlanOfferLabel: (period, price) => `${period}, ${price}`,
+  promoCodeApply: 'Promo code',
+  promoCodePlaceholder: 'Code',
+  promoNotFound: 'Promo code was not found or is invalid.',
+  proPurchasing: 'Opening checkout…',
+  proPurchaseSuccess: 'Pro subscription is active.',
+  proPurchaseFailed: 'Could not upgrade to Pro. Install RuStore and sign in.',
+  proPurchaseCancelled: 'Payment cancelled.',
+  proRestoreNone: 'No active subscription found.',
   proPurchaseSoon: 'Pro purchase via RuStore is coming soon. Use the dev toggle for now.',
   proPurchaseSoonPlay: 'Pro purchase via Google Play is coming soon. Use the dev toggle for now.',
   freeFeatureAdsPlay: 'Yandex RSYA banner on main screens',
@@ -522,6 +576,15 @@ const EN: AppText = {
     'Укажите email': 'Enter your email',
     'Введите код из письма': 'Enter the code from email',
     'Не удалось войти': 'Could not sign in',
+    unavailable: 'RuStore billing is unavailable. Install RuStore and sign in.',
+    cancelled: 'Payment cancelled.',
+    payment_failed: 'Payment failed. Try again.',
+    unknown: 'Could not complete the purchase.',
+    'RuStore billing is not integrated yet': 'RuStore billing is not linked in this build.',
+    'RuStore Pay SDK is not linked in this build': 'RuStore Pay SDK is missing from this build.',
+    'RuStore payments are unavailable (install RuStore and sign in)':
+      'Payments unavailable: install RuStore and sign in.',
+    'RuStore payments are unavailable': 'RuStore payments are unavailable.',
   },
 };
 
