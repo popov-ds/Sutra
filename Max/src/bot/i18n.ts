@@ -1,31 +1,68 @@
 export type AppLanguage = "ru" | "en";
 
+function formatDiagTime(iso: string | null): string {
+  if (!iso) return "—";
+  try {
+    return new Date(iso).toLocaleString("ru-RU", { dateStyle: "short", timeStyle: "short" });
+  } catch {
+    return iso;
+  }
+}
+
 const copy = {
   ru: {
     welcome:
       "Sutra — CRM для сетевого бизнеса.\n\n" +
-      "Работа с клиентами — **Моя Sutra** (Mini App).\n" +
-      "Тариф, Pro и настройки — кнопками в чате.",
+      "Тариф, Pro и настройки — кнопками в чате.\n" +
+      "👇",
     menuHint: "👇",
     settingsTitle: "Настройки",
+    syncTitle: "☁️ Синхронизация",
+    btnCloudSignIn: "🔑 Войти в облако",
+    btnCloudSignOut: "🚪 Выйти из облака",
+    cloudSyncNow: "🔄 Синхронизировать",
+    cloudNotLinked: "Облако не подключено.",
+    cloudLinkedStatus: (email: string) => `Вошли в облако: ${email}`,
+    cloudEmailPrompt: "Введите email для входа в облако одним сообщением в чат.",
+    cloudCodePrompt: (email: string) => `Код отправлен на ${email}. Введите код из письма одним сообщением.`,
+    cloudEmailInvalid: "Некорректный email. Попробуйте снова или нажмите «Назад».",
+    cloudCodeInvalid: "Код слишком короткий.",
+    cloudSignInOk: (email: string) => `Облако подключено: ${email}.`,
+    cloudSignedOut: "Вы вышли из облака.",
+    cloudSessionExpired: "Сессия облака истекла (перезапуск бота). Войдите снова.",
+    cloudSyncChatOk: (clients: number) =>
+      `Связь с облаком активна. Клиентов в облаке: ${clients}. Данные CRM синхронизируются при работе в Mini App.`,
+    cloudSyncDiagnostics: (p: {
+      maxUserId: number;
+      supabaseUserId: string;
+      localClients: number | null;
+      localReportedAt: string | null;
+      cloudClients: number;
+    }) => {
+      const localLine =
+        p.localClients === null
+          ? "Локальная база: нет отчёта — откройте CRM в Mini App на этом устройстве."
+          : `Локальная база: ${p.localClients} клиент(ов) (Mini App: ${formatDiagTime(p.localReportedAt)})`;
+      return (
+        `Синхронизация (сводка)\n` +
+        `MAX user id: ${p.maxUserId}\n` +
+        `Supabase user id: ${p.supabaseUserId}\n` +
+        `${localLine}\n` +
+        `В облаке: ${p.cloudClients} клиент(ов)`
+      );
+    },
+    cloudError: (err: unknown) => `Ошибка: ${err instanceof Error ? err.message : String(err)}`,
     languageTitle: "Язык",
-    btnLanguage: "Язык",
-    btnSubscription: "Подписка",
-    btnBack: "Назад",
+    btnLanguage: "🌐 Язык",
+    btnSync: "☁️ Синхронизация",
+    btnBack: "◀️ Назад",
     btnSubscribePro: "Оформить Pro",
-    btnCloudAccount: "Аккаунт облака",
-    btnCloudDisconnect: "Отключить синхронизацию",
+    syncProOnly: "Облако доступно на тарифе Pro. См. «💎 Pro».",
     langRu: "Русский",
     langEn: "Английский",
     menuRestored: "Главное меню",
-    cloudNotLinked: "Синхронизация Supabase не подключена. Войдите по email.",
-    cloudLinkedHint: "Облако подключено. В Mini App данные можно синхронизировать.",
-    askCloudEmail: "Введите email для Supabase (одним сообщением в чат):",
-    invalidEmail: "Некорректный email.",
+    botTempError: "Не удалось показать меню. Попробуйте снова через минуту или напишите /start.",
     supabaseMissing: "Supabase не настроен на сервере (URL/ключ в .env).",
-    otpSendFailed: "Не удалось отправить код:",
-    otpSent: (email: string) => `Код отправлен на ${email}. Введите его в чат.`,
-    otpInvalid: "Неверный код. Попробуйте снова.",
     btnSutra: "📋 Моя Sutra",
     btnTariff: "📊 Тариф",
     btnPro: "💎 Pro",
@@ -34,11 +71,23 @@ const copy = {
     tariffFree: (n: number) => `Тариф: Free\nДо ${n} клиентов и записей в справочниках.\nБез облачной синхронизации.`,
     tariffPro: "Тариф: Pro\nБез лимитов, синхронизация Supabase.",
     settings: "Настройки\nЯзык чата: русский.\nCRM — в Mini App «Моя Sutra».",
-    pro: "Pro\nОформление подписки подключается на сервере.\nПока — тестовый Pro через администратора.",
+    pro: "Pro\nОплата подключается на сервере.\nИли активируйте промокод кнопкой ниже.",
+    promoButton: "🎟 Промокод",
+    promoStatusHint: "Промокод: «💎 Pro» → «🎟 Промокод».",
+    promoPrompt: "Введите промокод одним сообщением в чат.",
+    promoOk: (days: number, expires: string) => `Pro на ${days} дн. активирована до ${expires}. См. «📊 Тариф».`,
+    promoUnknown: "Такого промокода нет или он не загружен на сервер (PROMO_CODES в .env).",
+    promoUsed: "Вы уже активировали этот промокод.",
+    promoExhausted: "Промокод исчерпан (лимит активаций).",
+    promoInvalid: "Некорректный код.",
+    promoAlreadyPro: "Pro уже активен. См. «📊 Тариф».",
+    promoDbRequired: "Промокоды доступны только с Postgres (DATABASE_URL на сервере).",
+    tariffProActive: (until: string) =>
+      `Тариф: Pro\nАктивна до ${until}.\nОблако — иконка ☁️ внизу CRM (Mini App).`,
     help:
       "**Моя Sutra** — CRM в Mini App.\n" +
       "Кнопки **Тариф / Pro / Настройки / Помощь** — ответы в этом чате.\n" +
-      "Данные CRM — локально в браузере; Pro — sync с Supabase.",
+      "Облачная синхронизация (Pro) — вкладка ☁️ внизу Mini App.",
     unknown: "Выберите действие кнопками в меню ниже.",
     miniAppMissing:
       "Mini App не настроен: задайте PUBLIC_BASE_URL=https://… в .env и укажите URL в кабинете MAX.",
@@ -46,28 +95,55 @@ const copy = {
   en: {
     welcome:
       "Sutra — network marketing CRM.\n\n" +
-      "CRM — **My Sutra** Mini App.\n" +
-      "Plan, Pro, settings — chat buttons.",
+      "Plan, Pro, and settings — chat buttons.\n" +
+      "👇",
     menuHint: "👇",
     settingsTitle: "Settings",
+    syncTitle: "☁️ Sync",
+    btnCloudSignIn: "🔑 Sign in to cloud",
+    btnCloudSignOut: "🚪 Sign out of cloud",
+    cloudSyncNow: "🔄 Sync now",
+    cloudNotLinked: "Cloud is not linked.",
+    cloudLinkedStatus: (email: string) => `Signed in: ${email}`,
+    cloudEmailPrompt: "Send your cloud login email in one chat message.",
+    cloudCodePrompt: (email: string) => `Code sent to ${email}. Send the code from the email in one message.`,
+    cloudEmailInvalid: "Invalid email.",
+    cloudCodeInvalid: "Code is too short.",
+    cloudSignInOk: (email: string) => `Cloud linked: ${email}.`,
+    cloudSignedOut: "Signed out of the cloud.",
+    cloudSessionExpired: "Cloud session expired. Please sign in again.",
+    cloudSyncChatOk: (clients: number) => `Cloud OK. Clients in cloud: ${clients}. CRM syncs in the Mini App.`,
+    cloudSyncDiagnostics: (p: {
+      maxUserId: number;
+      supabaseUserId: string;
+      localClients: number | null;
+      localReportedAt: string | null;
+      cloudClients: number;
+    }) => {
+      const localLine =
+        p.localClients === null
+          ? "Local DB: no report — open the CRM Mini App on this device."
+          : `Local DB: ${p.localClients} client(s) (Mini App: ${formatDiagTime(p.localReportedAt)})`;
+      return (
+        `Sync summary\n` +
+        `MAX user id: ${p.maxUserId}\n` +
+        `Supabase user id: ${p.supabaseUserId}\n` +
+        `${localLine}\n` +
+        `In cloud: ${p.cloudClients} client(s)`
+      );
+    },
+    cloudError: (err: unknown) => `Error: ${err instanceof Error ? err.message : String(err)}`,
     languageTitle: "Language",
-    btnLanguage: "Language",
-    btnSubscription: "Subscription",
-    btnBack: "Back",
+    btnLanguage: "🌐 Language",
+    btnSync: "☁️ Sync",
+    btnBack: "◀️ Back",
     btnSubscribePro: "Get Pro",
-    btnCloudAccount: "Cloud account",
-    btnCloudDisconnect: "Disconnect sync",
+    syncProOnly: "Cloud requires Pro. See «💎 Pro».",
     langRu: "Russian",
     langEn: "English",
     menuRestored: "Main menu",
-    cloudNotLinked: "Supabase sync is not linked. Sign in with email.",
-    cloudLinkedHint: "Cloud linked. Sync data in the Mini App.",
-    askCloudEmail: "Enter your Supabase email in chat:",
-    invalidEmail: "Invalid email.",
+    botTempError: "Could not show the menu. Try again in a minute or send /start.",
     supabaseMissing: "Supabase is not configured on the server.",
-    otpSendFailed: "Could not send code:",
-    otpSent: (email: string) => `Code sent to ${email}. Enter it in chat.`,
-    otpInvalid: "Invalid code. Try again.",
     btnSutra: "📋 My Sutra",
     btnTariff: "📊 Plan",
     btnPro: "💎 Pro",
@@ -76,8 +152,21 @@ const copy = {
     tariffFree: (n: number) => `Plan: Free\nUp to ${n} clients and catalog entries.\nNo cloud sync.`,
     tariffPro: "Plan: Pro\nNo limits; Supabase sync.",
     settings: "Settings\nChat language: English.\nCRM — My Sutra Mini App.",
-    pro: "Pro\nBilling on the server.\nTest Pro via admin for now.",
-    help: "**My Sutra** — CRM Mini App.\nOther buttons — answers in chat.\nLocal data in browser; Pro — Supabase.",
+    pro: "Pro\nBilling on the server.\nOr redeem a promo code below.",
+    promoButton: "🎟 Promo code",
+    promoStatusHint: "Promo: «💎 Pro» → «🎟 Promo code».",
+    promoPrompt: "Send your promo code in one chat message.",
+    promoOk: (days: number, expires: string) => `Pro for ${days} days until ${expires}. See «📊 Plan».`,
+    promoUnknown: "Unknown code or not loaded (PROMO_CODES in .env).",
+    promoUsed: "You already redeemed this code.",
+    promoExhausted: "This promo code has reached its activation limit.",
+    promoInvalid: "Invalid code.",
+    promoAlreadyPro: "Pro is already active.",
+    promoDbRequired: "Promo codes require Postgres (DATABASE_URL on the server).",
+    tariffProActive: (until: string) =>
+      `Plan: Pro\nActive until ${until}.\nCloud — ☁️ tab at the bottom of the CRM Mini App.`,
+    help:
+      "**My Sutra** — CRM Mini App.\nPlan, Pro, Settings, Help — in this chat.\nCloud sync (Pro) — ☁️ tab at the bottom of the Mini App.",
     unknown: "Use the buttons below the input.",
     miniAppMissing: "Set PUBLIC_BASE_URL=https://… in .env and register in MAX.",
   },
@@ -108,13 +197,17 @@ export function allMenuLabels(): Set<string> {
   return out;
 }
 
+function normalizeMenuLabel(text: string): string {
+  return text.trim().replace(/\uFE0F/g, "");
+}
+
 export function actionForMenuText(text: string): keyof typeof MENU_PAYLOADS | null {
-  const trimmed = text.trim();
+  const trimmed = normalizeMenuLabel(text);
   for (const lang of ["ru", "en"] as const) {
     const t = strings(lang);
-    if (trimmed === t.btnTariff) return "tariff";
-    if (trimmed === t.btnPro) return "pro";
-    if (trimmed === t.btnSettings) return "settings";
+    if (trimmed === normalizeMenuLabel(t.btnTariff)) return "tariff";
+    if (trimmed === normalizeMenuLabel(t.btnPro)) return "pro";
+    if (trimmed === normalizeMenuLabel(t.btnSettings)) return "settings";
     if (trimmed === t.btnHelp) return "help";
     if (trimmed === t.btnSutra) return "today";
   }

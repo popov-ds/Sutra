@@ -1,7 +1,7 @@
 import type { TaskListItem } from "../db/localDb.js";
-import { formatRuDate } from "../domain/dates.js";
+import { formatLocaleDate } from "../domain/dates.js";
 import { effectiveStatus } from "../domain/taskStatus.js";
-import type { UiStrings } from "../i18n.js";
+import { taskDisplayTitle, type AppLanguage, type UiStrings } from "../i18n.js";
 
 const CATEGORY_CLASS: Record<string, string> = {
   service: "cat-service",
@@ -13,6 +13,7 @@ export function taskCardHtml(
   task: TaskListItem,
   today: string,
   t: UiStrings,
+  lang: AppLanguage,
   options: { showComplete?: boolean; dataOpenClient?: string } = {},
 ): string {
   const status = effectiveStatus(task.status as "pending" | "done" | "overdue", task.touchOn, today);
@@ -29,8 +30,8 @@ export function taskCardHtml(
       <span class="task-cat-chip">${escapeHtml(catLabel)}</span>
       <span class="task-status ${status === "overdue" ? "task-status--overdue" : ""}">${escapeHtml(statusLabel)}</span>
     </div>
-    <p class="task-card-meta">${escapeHtml(formatRuDate(task.touchOn))}${task.clientName ? ` · ${escapeHtml(task.clientName)}` : ""}${task.productName ? ` · ${escapeHtml(task.productName)}` : ""}</p>
-    <p class="task-card-title">${escapeHtml(task.title)}</p>
+    <p class="task-card-meta">${escapeHtml(formatLocaleDate(task.touchOn, lang))}${task.clientName ? ` · ${escapeHtml(task.clientName)}` : ""}${task.productName ? ` · ${escapeHtml(task.productName)}` : ""}</p>
+    <p class="task-card-title">${escapeHtml(taskDisplayTitle(t, task.type, task.title))}</p>
     ${task.details ? `<p class="task-card-details">${escapeHtml(task.details)}</p>` : ""}
     ${options.showComplete && !done ? `<button type="button" class="btn-quiet" data-complete="${escapeAttr(task.id)}">${escapeHtml(t.complete)}</button>` : ""}
   </article>`;

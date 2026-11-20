@@ -1,3 +1,5 @@
+import type { UiStrings } from "../i18n.js";
+
 type ConfirmOptions = {
   title: string;
   message: string;
@@ -45,12 +47,12 @@ export function confirmDialog(options: ConfirmOptions): Promise<boolean> {
   });
 }
 
-export function confirmDelete(message: string): Promise<boolean> {
+export function confirmDelete(t: UiStrings, message: string): Promise<boolean> {
   return confirmDialog({
-    title: "Подтверждение",
+    title: t.confirmTitle,
     message,
-    confirmLabel: "Удалить",
-    cancelLabel: "Отмена",
+    confirmLabel: t.delete,
+    cancelLabel: t.cancel,
     danger: true,
   });
 }

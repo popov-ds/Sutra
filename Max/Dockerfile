@@ -9,10 +9,13 @@ RUN apt-get update \
   && update-ca-certificates \
   && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
-COPY package.json package-lock.json* ./
-RUN npm ci 2>/dev/null || npm install
+# devDependencies нужны для tsc и vite на этапе сборки
+ENV NODE_ENV=development
+COPY package.json package-lock.json ./
+RUN npm ci
 COPY tsconfig.json ./
 COPY miniapp ./miniapp
+COPY sql ./sql
 COPY src ./src
 RUN npm run build
 ENV NODE_ENV=production

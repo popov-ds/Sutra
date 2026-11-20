@@ -8,7 +8,7 @@ export async function runPolling(): Promise<void> {
     try {
       const page = await getUpdates(marker);
       for (const u of page.updates ?? []) {
-        await handleUpdate(u);
+        await handleUpdate(u).catch((err) => console.error("handleUpdate:", err));
       }
       if (page.marker !== undefined) marker = page.marker;
     } catch (err) {

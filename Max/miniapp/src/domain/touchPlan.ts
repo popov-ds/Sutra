@@ -1,19 +1,16 @@
 import { assertCourseDuration } from "./catalog.js";
-import { addCalendarDays, assertIsoDate, formatRuDate } from "./dates.js";
+import { addCalendarDays, assertIsoDate, formatLocaleDate } from "./dates.js";
 import { createId } from "./ids.js";
+import { strings } from "../i18n.js";
+import { getAppLanguage } from "../localeContext.js";
 import type { ClientStatus } from "./validate.js";
+import type { TaskTypeKey } from "../i18n.js";
 
 export const REORDER_LEAD_DAYS = 4;
 export const PARTNERSHIP_WINDOW_DAYS = 21;
 
 type TaskCategory = "service" | "upsell" | "partnership";
-type TaskType =
-  | "service_usage"
-  | "control_checkin"
-  | "result_checkpoint"
-  | "cross_sell"
-  | "reorder_reminder"
-  | "partnership_offer";
+type TaskType = TaskTypeKey;
 type TaskSource = "purchase_cascade" | "reorder" | "partnership_window";
 
 export type TaskDraft = {
@@ -34,34 +31,14 @@ type CascadeStep = {
   offsetDays: number;
   type: TaskType;
   category: TaskCategory;
-  title: string;
+  titleKey: TaskType;
 };
 
-export const PURCHASE_CASCADE: readonly CascadeStep[] = [
-  {
-    offsetDays: 0,
-    type: "service_usage",
-    category: "service",
-    title: "Сервис: Объяснить, как пользоваться продуктом и как его хранить",
-  },
-  {
-    offsetDays: 3,
-    type: "control_checkin",
-    category: "service",
-    title: "Контроль: Уточнить впечатление от продукта и ответить на вопросы",
-  },
-  {
-    offsetDays: 7,
-    type: "result_checkpoint",
-    category: "service",
-    title: "Результат: Спросить об эффекте или обратной связи",
-  },
-  {
-    offsetDays: 15,
-    type: "cross_sell",
-    category: "upsell",
-    title: "Кросс-селл: Предложить дополнительный продукт из вашего каталога",
-  },
+const PURCHASE_CASCADE: readonly CascadeStep[] = [
+  { offsetDays: 0, type: "service_usage", category: "service", titleKey: "service_usage" },
+  { offsetDays: 3, type: "control_checkin", category: "service", titleKey: "control_checkin" },
+  { offsetDays: 7, type: "result_checkpoint", category: "service", titleKey: "result_checkpoint" },
+  { offsetDays: 15, type: "cross_sell", category: "upsell", titleKey: "cross_sell" },
 ];
 
 export function courseEndsOn(purchasedOn: string, durationDays: number): string {
@@ -83,6 +60,8 @@ export function buildPurchaseTasks(input: {
   purchasedOn: string;
   createId?: () => string;
 }): TaskDraft[] {
+  const t = strings(getAppLanguage());
+  const lang = getAppLanguage();
   const idGen = input.createId ?? createId;
   const purchasedOn = assertIsoDate(input.purchasedOn);
   const durationDays = assertCourseDuration(input.product.durationDays);
@@ -96,8 +75,8 @@ export function buildPurchaseTasks(input: {
       touchOn: addCalendarDays(purchasedOn, step.offsetDays),
       type: step.type,
       category: step.category,
-      title: step.title,
-      details: cascadeDetails(step.type, input.product.name),
+      title: t.taskTitles[step.titleKey],
+      details: cascadeDetails(step.type, input.product.name, t),
       source: "purchase_cascade",
       dedupeKey: `purchase:${input.purchaseId}:${step.type}`,
     }),
@@ -110,8 +89,12 @@ export function buildPurchaseTasks(input: {
     touchOn: reorderTouchOn(purchasedOn, durationDays),
     type: "reorder_reminder",
     category: "upsell",
-    title: "Напомнить о заказе, продукт скоро закончится",
-    details: `«${input.product.name}»: период ${durationDays} дн., расчетное окончание ${formatRuDate(endsOn)}.`,
+    title: t.taskTitles.reorder_reminder,
+    details: t.taskDetailFns.reorder(
+      input.product.name,
+      durationDays,
+      formatLocaleDate(endsOn, lang),
+    ),
     source: "reorder",
     dedupeKey: `purchase:${input.purchaseId}:reorder_reminder`,
   });
@@ -132,6 +115,8 @@ export function buildPartnershipTask(input: {
   changedOn: string;
   createId?: () => string;
 }): TaskDraft {
+  const t = strings(getAppLanguage());
+  const lang = getAppLanguage();
   const idGen = input.createId ?? createId;
   const changedOn = assertIsoDate(input.changedOn);
   return draftTask({
@@ -141,24 +126,22 @@ export function buildPartnershipTask(input: {
     touchOn: addCalendarDays(changedOn, PARTNERSHIP_WINDOW_DAYS),
     type: "partnership_offer",
     category: "partnership",
-    title: "Окно партнерства: Сделать бизнес-предложение",
-    details: `Статус «Постоянный клиент» установлен ${formatRuDate(changedOn)}. Задача ставится через 21 день и только при переводе в этот статус.`,
+    title: t.taskTitles.partnership_offer,
+    details: t.taskDetailFns.partnership(formatLocaleDate(changedOn, lang)),
     source: "partnership_window",
     dedupeKey: `client:${input.clientId}:partnership_offer:${changedOn}`,
   });
 }
 
-function cascadeDetails(type: TaskType, productName: string): string {
-  if (type === "cross_sell") {
-    return `После «${productName}». Уточнить, что ещё может пригодиться, и предложить другой продукт из каталога — не повтор текущей покупки.`;
-  }
-  if (type === "service_usage") {
-    return `Продукт «${productName}». Показать, как пользоваться и как хранить.`;
-  }
-  if (type === "control_checkin") {
-    return `Продукт «${productName}». Спросить, всё ли понятно и устраивает ли результат на этом этапе.`;
-  }
-  return `Продукт «${productName}». Зафиксировать обратную связь словами клиента.`;
+function cascadeDetails(
+  type: TaskType,
+  productName: string,
+  t: ReturnType<typeof strings>,
+): string {
+  if (type === "cross_sell") return t.taskDetailFns.cross_sell(productName);
+  if (type === "service_usage") return t.taskDetailFns.service_usage(productName);
+  if (type === "control_checkin") return t.taskDetailFns.control_checkin(productName);
+  return t.taskDetailFns.result_default(productName);
 }
 
 function draftTask(input: Omit<TaskDraft, "status">): TaskDraft {

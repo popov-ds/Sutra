@@ -1,12 +1,12 @@
 import type { MaxInlineButton } from "../max/client.js";
-import { strings, type AppLanguage } from "./i18n.js";
+import { MENU_PAYLOADS, strings, type AppLanguage } from "./i18n.js";
 
-/** Кнопки чата MAX: вертикальный столбец (по одной в ряду). */
-export async function mainMenuKeyboard(lang: AppLanguage, _maxUserId: number): Promise<MaxInlineButton[][]> {
+/** Callback-кнопки: MAX стабильно доставляет payload (message-кнопки часто не совпадают с текстом). */
+export function mainMenuKeyboard(lang: AppLanguage, _maxUserId: number): MaxInlineButton[][] {
   const t = strings(lang);
   return [
-    [{ type: "message", text: t.btnTariff }],
-    [{ type: "message", text: t.btnSettings }],
-    [{ type: "message", text: t.btnPro }],
+    [{ type: "callback", text: t.btnTariff, payload: MENU_PAYLOADS.tariff }],
+    [{ type: "callback", text: t.btnSettings, payload: MENU_PAYLOADS.settings }],
+    [{ type: "callback", text: t.btnPro, payload: MENU_PAYLOADS.pro }],
   ];
 }

@@ -13,18 +13,18 @@
   <body>
     <div id="app">
       <main id="screen" class="screen-scroll" role="main"></main>
-      <nav class="tabs tabs-primary bottom-dock" aria-label="Разделы CRM">
-        <button type="button" class="tab active" data-primary="today">
+      <nav class="tabs tabs-primary tabs--icons bottom-dock" aria-label="Разделы CRM">
+        <button type="button" class="tab active" data-primary="today" aria-label="Сегодня">
           <span class="material-symbols-outlined tab-icon" aria-hidden="true">calendar_month</span>
-          <span class="tab-label">Сегодня</span>
         </button>
-        <button type="button" class="tab" data-primary="clients">
+        <button type="button" class="tab" data-primary="clients" aria-label="Клиенты">
           <span class="material-symbols-outlined tab-icon" aria-hidden="true">groups</span>
-          <span class="tab-label">Клиенты</span>
         </button>
-        <button type="button" class="tab" data-primary="directories">
+        <button type="button" class="tab" data-primary="directories" aria-label="Справочники">
           <span class="material-symbols-outlined tab-icon" aria-hidden="true">menu_book</span>
-          <span class="tab-label">Справочники</span>
+        </button>
+        <button type="button" class="tab" data-primary="cloud" hidden aria-label="Облако">
+          <span class="material-symbols-outlined tab-icon" aria-hidden="true">cloud</span>
         </button>
       </nav>
     </div>

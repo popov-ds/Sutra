@@ -1,3 +1,4 @@
+import type { AppLanguage } from "../i18n.js";
 import { DomainError } from "./validate.js";
 
 const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
@@ -5,13 +6,13 @@ const RU_DATE = /^(\d{2})\.(\d{2})\.(\d{4})$/;
 
 export function assertIsoDate(value: string): string {
   const match = ISO_DATE.exec(value);
-  if (!match) throw new DomainError("Дата должна быть в формате ГГГГ-ММ-ДД");
+  if (!match) throw new DomainError("date_format");
   const year = Number(match[1]);
   const month = Number(match[2]);
   const day = Number(match[3]);
   const date = new Date(year, month - 1, day);
   if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
-    throw new DomainError("Такой календарной даты нет");
+    throw new DomainError("date_invalid");
   }
   return value;
 }
@@ -30,7 +31,7 @@ export function todayIso(): string {
 }
 
 export function addCalendarDays(isoDate: string, days: number): string {
-  if (!Number.isInteger(days)) throw new DomainError("Сдвиг даты должен быть целым числом дней");
+  if (!Number.isInteger(days)) throw new DomainError("date_offset_integer");
   const [year, month, day] = assertIsoDate(isoDate).split("-").map(Number);
   const date = new Date(year, month - 1, day);
   date.setDate(date.getDate() + days);
@@ -41,6 +42,15 @@ export function addCalendarDays(isoDate: string, days: number): string {
 export function formatRuDate(isoDate: string): string {
   const [y, m, d] = assertIsoDate(isoDate).split("-");
   return `${d}.${m}.${y}`;
+}
+
+export function formatLocaleDate(isoDate: string, lang: AppLanguage): string {
+  const [year, month, day] = assertIsoDate(isoDate).split("-").map(Number);
+  const date = new Date(year, month - 1, day);
+  if (lang === "en") {
+    return date.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
+  }
+  return formatRuDate(isoDate);
 }
 
 export function compareIsoDates(left: string, right: string): number {

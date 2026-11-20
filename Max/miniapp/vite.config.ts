@@ -11,5 +11,11 @@ export default defineConfig({
   build: {
     outDir: path.join(dir, "..", "dist", "miniapp-web"),
     emptyOutDir: true,
+    rollupOptions: {
+      input: {
+        main: path.join(dir, "index.html"),
+        cloud: path.join(dir, "cloud.html"),
+      },
+    },
   },
 });

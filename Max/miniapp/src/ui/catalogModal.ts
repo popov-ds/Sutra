@@ -6,12 +6,12 @@ import {
   deleteProductRecord,
   listClientRequests,
   listProducts,
-  persistDb,
+  persistLocalChanges,
   updateClientRequestRecord,
   updateProductRecord,
 } from "../db/localDb.js";
-import { DomainError } from "../domain/validate.js";
 import type { UiStrings } from "../i18n.js";
+import { userErrorMessage } from "../i18n.js";
 import { confirmDelete } from "./confirm.js";
 
 export type CatalogKind = "product" | "clientRequest";
@@ -49,7 +49,7 @@ export async function openCatalogPicker(
 
       const listHtml =
         items.length === 0 && mode === "list"
-          ? `<p class="muted">Список пуст. Добавьте запись.</p>`
+          ? `<p class="muted">${escapeHtml(t.catalogEmpty)}</p>`
           : items
               .map((item) => {
                 const sel = item.id === selectedId || item.id === highlightId;
@@ -63,17 +63,17 @@ export async function openCatalogPicker(
       const formHtml =
         mode !== "list"
           ? `<div class="catalog-form card">
-              <p class="form-title">${mode === "add" ? "Новая запись" : "Редактирование"}</p>
-              <label class="field-label">Название<input id="cat-name" class="input--placeholder-muted" placeholder="Название" /></label>
+              <p class="form-title">${mode === "add" ? escapeHtml(t.catalogEntryNew) : escapeHtml(t.catalogEntryEdit)}</p>
+              <label class="field-label">${escapeHtml(t.titleLabel)}<input id="cat-name" class="input--placeholder-muted" placeholder="${escapeAttr(t.titlePlaceholder)}" /></label>
               ${
                 kind === "product"
-                  ? `<label class="field-label">Срок курса (дней)<input id="cat-days" type="number" inputmode="numeric" value="30" /></label>`
+                  ? `<label class="field-label">${escapeHtml(t.courseDurationLabel)}<input id="cat-days" type="number" inputmode="numeric" value="30" /></label>`
                   : ""
               }
               <p class="error" id="cat-error" hidden></p>
               <div class="form-actions catalog-form-actions">
-                <button type="button" class="btn-secondary" id="cat-cancel-form">Отмена</button>
-                <button type="button" class="primary" id="cat-save-form">Сохранить</button>
+                <button type="button" class="btn-secondary" id="cat-cancel-form">${escapeHtml(t.cancel)}</button>
+                <button type="button" class="primary" id="cat-save-form">${escapeHtml(t.save)}</button>
               </div>
             </div>`
           : "";
@@ -140,18 +140,18 @@ export async function openCatalogPicker(
         });
         overlay.querySelector("#cat-del")!.addEventListener("click", () => {
           if (!selectedId) return;
-          const name = items.find((i) => i.id === selectedId)?.title ?? "запись";
+          const name = items.find((i) => i.id === selectedId)?.title ?? t.deleteFallbackEntry;
           void (async () => {
-            if (!(await confirmDelete(`Удалить «${name}»?`))) return;
+            if (!(await confirmDelete(t, t.deleteNamed(name)))) return;
             try {
               if (kind === "product") await deleteProductRecord(selectedId!);
               else await deleteClientRequestRecord(selectedId!);
-              await persistDb();
+              await persistLocalChanges();
               selectedId = null;
               highlightId = null;
               void render();
             } catch (e) {
-              alert(e instanceof DomainError ? e.message : String(e));
+              alert(userErrorMessage(e, t));
             }
           })();
         });
@@ -173,11 +173,11 @@ export async function openCatalogPicker(
               } else if (mode === "add") {
                 await createClientRequestRecord(name, me.tier === "pro", me.freeRecordLimit);
               } else await updateClientRequestRecord(selectedId!, name);
-              await persistDb();
+              await persistLocalChanges();
               mode = "list";
               void render();
             } catch (e) {
-              err.textContent = e instanceof DomainError ? e.message : String(e);
+              err.textContent = userErrorMessage(e, t);
               err.hidden = false;
             }
           })();
@@ -193,4 +193,8 @@ export async function openCatalogPicker(
 
 function escapeHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function escapeAttr(s: string): string {
+  return escapeHtml(s).replace(/"/g, "&quot;");
 }

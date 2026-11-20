@@ -221,6 +221,10 @@ input.input--placeholder-muted::placeholder {
   padding: 8px 10px calc(8px + env(safe-area-inset-bottom, 0px));
 }
 
+.tabs.tabs--hidden {
+  display: none;
+}
+
 .tabs {
   display: flex;
   gap: 6px;
@@ -344,6 +348,11 @@ input.input--placeholder-muted::placeholder {
 .tab-compact {
   min-height: 46px;
   border-radius: 12px;
+}
+
+.tabs--icons .tab {
+  min-height: 48px;
+  padding: 8px 4px;
 }
 
 .tab-label {
@@ -713,6 +722,94 @@ input {
   font-weight: 600;
   cursor: pointer;
   width: 100%;
+}
+
+.cloud-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 4px 0 12px;
+}
+
+.cloud-panel--login {
+  gap: 12px;
+}
+
+.cloud-status {
+  font-weight: 700;
+  font-size: 1rem;
+  margin: 0;
+  color: var(--ink);
+}
+
+.cloud-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  border: none;
+  border-radius: 14px;
+  padding: 14px 18px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  min-height: 52px;
+}
+
+.cloud-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.cloud-btn .material-symbols-outlined {
+  font-size: 24px;
+}
+
+.cloud-btn--primary {
+  background: linear-gradient(135deg, #2d6a4f, #1b4332);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(27, 67, 50, 0.35);
+}
+
+.cloud-btn--secondary {
+  background: var(--card);
+  color: var(--service);
+  border: 2px solid var(--service);
+}
+
+.cloud-btn--sync {
+  background: linear-gradient(135deg, #1d6fb8, #155a94);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(21, 90, 148, 0.35);
+}
+
+.cloud-btn--signout {
+  background: #fce8e6;
+  color: #b3261e;
+  border: 2px solid #f5c2c0;
+}
+
+.cloud-btn--ghost {
+  background: transparent;
+  color: var(--ink);
+  border: 1px dashed var(--line);
+  margin-top: 8px;
+}
+
+body.app-cloud {
+  background: var(--bg);
+}
+
+.app-cloud-shell {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+body.app-cloud #screen {
+  flex: 1;
+  padding: 16px 16px calc(16px + env(safe-area-inset-bottom, 0px));
 }
 
 .section-title--overdue {

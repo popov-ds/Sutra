@@ -8,7 +8,11 @@
 | YogaSheduler | `18080` |
 | **Sutra MAX** | **`18081`** |
 
-Docker project: `sutramaxbot` (том `sutramaxbot_sutramax_data`).
+Docker project: `sutramaxbot` (тома `sutramax_data`, **`sutramax_pgdata`** — Postgres **`sutra_bot`** на `127.0.0.1:55433`).
+
+| Yoga | Sutra MAX |
+|------|-----------|
+| `55432` / `yogascheduler_bot` | **`55433` / `sutra_bot`** |
 
 ## 1. Локально
 

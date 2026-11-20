@@ -78,9 +78,20 @@ def mkdir_p(sftp: paramiko.SFTPClient, path: str) -> None:
             sftp.mkdir(current)
 
 
+def should_skip_dir(local: Path) -> bool:
+    if local.name not in SKIP_DIRS:
+        return False
+    try:
+        rel = local.resolve().relative_to(ROOT.resolve())
+    except ValueError:
+        return False
+    # Только корневые Max/data, Max/node_modules, … не miniapp/src/data
+    return len(rel.parts) == 1
+
+
 def upload_tree(sftp: paramiko.SFTPClient, local: Path, remote: str) -> None:
     if local.is_dir():
-        if local.name in SKIP_DIRS:
+        if should_skip_dir(local):
             return
         mkdir_p(sftp, remote)
         for child in sorted(local.iterdir()):

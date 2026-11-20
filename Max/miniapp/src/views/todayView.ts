@@ -3,7 +3,7 @@ import {
   completeTask,
   countClients,
   loadDayBoard,
-  persistDb,
+  persistLocalChanges,
 } from "../db/localDb.js";
 import { todayIso } from "../domain/dates.js";
 import type { UiStrings } from "../i18n.js";
@@ -18,10 +18,11 @@ function addDays(iso: string, delta: number): string {
   return `${date.getFullYear()}-${p(date.getMonth() + 1)}-${p(date.getDate())}`;
 }
 
-function formatDayTitle(day: string, today: string, t: UiStrings): string {
+function formatDayTitle(day: string, today: string, t: UiStrings, lang: string): string {
   if (day === today) return t.today;
   const [y, m, d] = day.split("-").map(Number);
-  return new Date(y, m - 1, d).toLocaleDateString("ru-RU", {
+  const locale = lang === "en" ? "en-GB" : "ru-RU";
+  return new Date(y, m - 1, d).toLocaleDateString(locale, {
     weekday: "short",
     day: "numeric",
     month: "long",
@@ -46,16 +47,16 @@ export async function renderTodayView(
 
   const limit = me.tier === "free" ? me.freeRecordLimit : null;
   const head = `<div class="day-pager">
-      <button type="button" class="pager-btn" data-day-delta="-1" aria-label="Предыдущий день">‹</button>
-      <button type="button" class="day-pager-title" data-day-reset="1">${escapeHtml(formatDayTitle(state.day, today, t))}</button>
-      <button type="button" class="pager-btn" data-day-delta="1" aria-label="Следующий день">›</button>
+      <button type="button" class="pager-btn" data-day-delta="-1" aria-label="${escapeAttr(t.prevDay)}">‹</button>
+      <button type="button" class="day-pager-title" data-day-reset="1">${escapeHtml(formatDayTitle(state.day, today, t, me.language))}</button>
+      <button type="button" class="pager-btn" data-day-delta="1" aria-label="${escapeAttr(t.nextDay)}">›</button>
     </div>`;
 
   const bodyParts: string[] = [`<p class="muted">${t.clientsCount(clientCount, limit)}</p>`];
 
   if (state.day === today && overdue.length > 0) {
     bodyParts.push(`<h2 class="section-title section-title--overdue">${escapeHtml(t.overdue(overdue.length))}</h2>`);
-    bodyParts.push(overdue.map((task) => taskCardHtml(task, today, t, { showComplete: true })).join(""));
+    bodyParts.push(overdue.map((task) => taskCardHtml(task, today, t, me.language, { showComplete: true })).join(""));
   }
 
   if (tasks.length === 0 && !(state.day === today && overdue.length > 0)) {
@@ -71,7 +72,7 @@ export async function renderTodayView(
         bodyParts.push(`<h2 class="section-title">${escapeHtml(catLabel)}</h2>`);
         lastCat = catLabel;
       }
-      bodyParts.push(bucket.map((task) => taskCardHtml(task, today, t, { showComplete: true })).join(""));
+      bodyParts.push(bucket.map((task) => taskCardHtml(task, today, t, me.language, { showComplete: true })).join(""));
     }
   }
 
@@ -91,7 +92,7 @@ export async function renderTodayView(
       void (async () => {
         const id = (el as HTMLElement).dataset.complete!;
         await completeTask(id);
-        await persistDb();
+        await persistLocalChanges();
         await renderTodayView(screen, me, t, state, onDayChange, onOpenClient);
       })();
     });
@@ -110,4 +111,8 @@ export async function renderTodayView(
 
 function escapeHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function escapeAttr(s: string): string {
+  return escapeHtml(s).replace(/"/g, "&quot;");
 }

@@ -119,6 +119,17 @@ def write_env(c: paramiko.SSHClient) -> None:
     if not launch_secret:
         launch_secret = secrets.token_urlsafe(32)
 
+    pg_pass = ""
+    promo_codes = ""
+    out = run(c, f"test -f {REMOTE}/.env && cat {REMOTE}/.env || true", timeout=30)
+    for line in out.splitlines():
+        if line.startswith("POSTGRES_PASSWORD=") and line.split("=", 1)[1].strip():
+            pg_pass = line.split("=", 1)[1].strip()
+        if line.startswith("PROMO_CODES="):
+            promo_codes = line.split("=", 1)[1].strip()
+    if not pg_pass:
+        pg_pass = secrets.token_urlsafe(24)
+
     body = f"""MAX_BOT_TOKEN={token}
 PUBLIC_BASE_URL={PUBLIC_BASE}
 HTTP_PORT=18081
@@ -127,6 +138,9 @@ MAX_USE_POLLING=1
 LAUNCH_TOKEN_SECRET={launch_secret}
 EXPO_PUBLIC_SUPABASE_URL={supabase_url}
 EXPO_PUBLIC_SUPABASE_ANON_KEY={supabase_anon}
+POSTGRES_PASSWORD={pg_pass}
+DATABASE_URL=postgresql://sutra:{pg_pass}@127.0.0.1:55433/sutra_bot
+PROMO_CODES={promo_codes}
 """
     sftp = c.open_sftp()
     with sftp.file(f"{REMOTE}/.env", "w") as f:

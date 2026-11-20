@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { parsePromoCodesEnv } from "./config/promoCodes.js";
 
 function required(name: string, value: string | undefined): string {
   const v = value?.trim();
@@ -8,7 +9,7 @@ function required(name: string, value: string | undefined): string {
 
 export const config = {
   maxBotToken: process.env.MAX_BOT_TOKEN?.trim() ?? "",
-  /** Публичное имя бота в MAX для open_app (если пусто — кнопка «Моя Sutra» открывает link на Mini App). */
+  /** Публичное имя бота в MAX для open_app (не URL). */
   maxBotWebApp: process.env.MAX_BOT_WEB_APP?.trim() ?? "",
   publicBaseUrl: (process.env.PUBLIC_BASE_URL ?? "").trim().replace(/\/$/, ""),
   httpPort: Number(process.env.HTTP_PORT ?? "8090"),
@@ -18,6 +19,9 @@ export const config = {
   supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL?.trim() ?? "",
   supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY?.trim() ?? "",
   dataDir: process.env.DATA_DIR?.trim() || "data",
+  databaseUrl: process.env.DATABASE_URL?.trim() ?? "",
+  postgresPassword: process.env.POSTGRES_PASSWORD?.trim() ?? "",
+  promoCodes: parsePromoCodesEnv(process.env.PROMO_CODES ?? ""),
   freeRecordLimit: 10,
 };
 

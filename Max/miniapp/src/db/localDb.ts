@@ -1,4 +1,4 @@
-import initSqlJs, { type Database } from "sql.js";
+import initSqlJs, { type Database, type SqlValue } from "sql.js";
 import sqlWasmUrl from "sql.js/dist/sql-wasm.wasm?url";
 import { courseEndsOn } from "../domain/touchPlan.js";
 import { todayIso } from "../domain/dates.js";
@@ -17,6 +17,7 @@ import {
   prepareProductInput,
   type ClientStatus,
 } from "../domain/validate.js";
+import { emitDataChanged } from "../data/events.js";
 import { SCHEMA_SQL } from "./schema";
 
 const IDB_NAME = "sutra-max-sqlite";
@@ -68,7 +69,8 @@ async function saveBytes(data: Uint8Array): Promise<void> {
 export async function getLocalDb(): Promise<Database> {
   if (db) return db;
   const SQL = await initSqlJs({
-    locateFile: (file) => (file.endsWith(".wasm") ? sqlWasmUrl : file),
+    locateFile: (file: string) => (file.endsWith(".wasm") ? sqlWasmUrl : file),
+    useOldExtensionFunctions: false,
   });
   const saved = await loadBytes();
   db = saved ? new SQL.Database(saved) : new SQL.Database();
@@ -81,6 +83,12 @@ export async function persistDb(): Promise<void> {
   if (!db) return;
   const data = db.export();
   await saveBytes(data);
+}
+
+/** Сохранить БД и уведомить подписчиков (автосинх, как Android emitDataChanged). */
+export async function persistLocalChanges(): Promise<void> {
+  await persistDb();
+  emitDataChanged();
 }
 
 function markOverdueUnlocked(database: Database, today: string): void {
@@ -174,7 +182,7 @@ function mapTaskStmt(stmt: ReturnType<Database["prepare"]>): TaskListItem[] {
   return out;
 }
 
-function selectTasks(database: Database, extraWhere: string, ...bind: unknown[]): TaskListItem[] {
+function selectTasks(database: Database, extraWhere: string, ...bind: SqlValue[]): TaskListItem[] {
   const stmt = database.prepare(`${TASK_SELECT} AND ${extraWhere}`);
   if (bind.length) stmt.bind(bind);
   return mapTaskStmt(stmt);
@@ -332,7 +340,7 @@ async function assertFreeLimit(isPro: boolean, freeLimit: number): Promise<void>
   )[0];
   const total = Number(row?.values[0]?.[0] ?? 0);
   if (total >= freeLimit) {
-    throw new DomainError(`Лимит Free: ${freeLimit} записей. Оформите Pro в чате с ботом.`, "limit");
+    throw new DomainError("free_limit", freeLimit);
   }
 }
 
@@ -359,12 +367,12 @@ export async function updateClientProfile(
   input: { name: string; phone: string; clientRequestId: string | null; additionalInfo: string },
 ): Promise<void> {
   const name = input.name.trim();
-  if (!name) throw new DomainError("Укажите имя клиента");
-  if (name.length > 120) throw new DomainError("Имя слишком длинное");
+  if (!name) throw new DomainError("client_name_required");
+  if (name.length > 120) throw new DomainError("client_name_too_long");
   const phone = input.phone.trim();
-  if (phone.length > 40) throw new DomainError("Телефон слишком длинный");
+  if (phone.length > 40) throw new DomainError("phone_too_long");
   const additionalInfo = input.additionalInfo.trim();
-  if (additionalInfo.length > 4000) throw new DomainError("Дополнительная информация слишком длинная");
+  if (additionalInfo.length > 4000) throw new DomainError("additional_info_too_long");
   const database = await getLocalDb();
   if (input.clientRequestId) {
     const stmt = database.prepare(
@@ -373,7 +381,7 @@ export async function updateClientProfile(
     stmt.bind([input.clientRequestId]);
     if (!stmt.step()) {
       stmt.free();
-      throw new DomainError("Запрос клиента не найден", "not_found");
+      throw new DomainError("client_request_not_found");
     }
     stmt.free();
   }
@@ -396,7 +404,7 @@ export async function updateClientStatus(
 ): Promise<StatusChange> {
   const database = await getLocalDb();
   const current = await getClient(clientId);
-  if (!current) throw new DomainError("Клиент не найден", "not_found");
+  if (!current) throw new DomainError("client_not_found");
   if (current.status === next) return { partnershipTask: null };
 
   const ts = nowIso();
@@ -423,7 +431,7 @@ export async function updateClientRecord(
   input: { name: string; phone: string; status: string; clientRequestId: string | null; additionalInfo: string },
 ): Promise<void> {
   const current = await getClient(clientId);
-  if (!current) throw new DomainError("Клиент не найден", "not_found");
+  if (!current) throw new DomainError("client_not_found");
   await updateClientProfile(clientId, {
     name: input.name,
     phone: input.phone,
@@ -496,7 +504,7 @@ export async function recordPurchaseForClient(
   productStmt.bind([productId]);
   if (!productStmt.step()) {
     productStmt.free();
-    throw new DomainError("Продукт не найден", "not_found");
+    throw new DomainError("product_not_found");
   }
   const product = productStmt.getAsObject() as { name: string; duration_days: number };
   productStmt.free();
@@ -562,7 +570,7 @@ export async function deleteProductRecord(id: string): Promise<void> {
   stmt.step();
   const count = Number((stmt.getAsObject() as { c: number }).c ?? 0);
   stmt.free();
-  if (count > 0) throw new DomainError("Нельзя удалить: есть покупки с этим продуктом", "in_use");
+  if (count > 0) throw new DomainError("product_in_use");
   const ts = nowIso();
   database.run(`UPDATE products SET deleted_at=?, updated_at=? WHERE id=? AND deleted_at IS NULL`, [ts, ts, id]);
 }
@@ -597,7 +605,7 @@ export async function deleteClientRequestRecord(id: string): Promise<void> {
   stmt.step();
   const count = Number((stmt.getAsObject() as { c: number }).c ?? 0);
   stmt.free();
-  if (count > 0) throw new DomainError("Нельзя удалить: запрос выбран у клиентов", "in_use");
+  if (count > 0) throw new DomainError("request_in_use");
   const ts = nowIso();
   database.run(
     `UPDATE client_requests SET deleted_at=?, updated_at=? WHERE id=? AND deleted_at IS NULL`,

@@ -1,30 +1,48 @@
 import type { MeResponse } from "../api.js";
-import { getClient, listProducts, persistDb, recordPurchaseForClient } from "../db/localDb.js";
+import { getClient, listProducts, persistLocalChanges, recordPurchaseForClient } from "../db/localDb.js";
 import { buildPurchaseTasks } from "../domain/touchPlan.js";
-import { assertIsoDate, formatRuDate, todayIso } from "../domain/dates.js";
-import { DomainError } from "../domain/validate.js";
+import { assertIsoDate, formatLocaleDate, todayIso } from "../domain/dates.js";
 import type { UiStrings } from "../i18n.js";
+import { taskDisplayTitle, userErrorMessage } from "../i18n.js";
 import { openCatalogPicker } from "../ui/catalogModal.js";
 import { setScreenChrome, splitLayout } from "../ui/screenChrome.js";
+
+export type PurchaseNewDraft = {
+  productId: string | null;
+  productName: string;
+  durationDays: number;
+  purchasedOn: string;
+};
+
+export function emptyPurchaseNewDraft(): PurchaseNewDraft {
+  return { productId: null, productName: "", durationDays: 30, purchasedOn: todayIso() };
+}
 
 export async function renderPurchaseNew(
   screen: HTMLElement,
   me: MeResponse,
   t: UiStrings,
   clientId: string,
+  draft: PurchaseNewDraft,
+  onDraftChange: (next: PurchaseNewDraft) => void,
   onBack: () => void,
 ): Promise<void> {
   const client = await getClient(clientId);
   if (!client) {
     setScreenChrome(screen, "scroll");
-    screen.innerHTML = `<p class="muted">Клиент не найден</p>`;
+    screen.innerHTML = `<p class="muted">${escapeHtml(t.clientNotFound)}</p>`;
     return;
   }
 
-  let productId: string | null = null;
-  let productName = "";
-  let durationDays = 30;
-  let purchasedOn = todayIso();
+  let productId = draft.productId;
+  let productName = draft.productName;
+  let durationDays = draft.durationDays;
+  let purchasedOn = draft.purchasedOn;
+
+  const syncDraft = () => {
+    onDraftChange({ productId, productName, durationDays, purchasedOn });
+  };
+
   const draw = () => {
     let previewHtml = "";
     if (productId) {
@@ -42,13 +60,13 @@ export async function renderPurchaseNew(
           .map(
             (task) => `<div class="preview-touch cat-${task.category}">
                 <span class="task-cat-chip">${escapeHtml(t.category[task.category] ?? task.category)}</span>
-                <p class="task-card-meta">${escapeHtml(formatRuDate(task.touchOn))}</p>
-                <p class="task-card-title">${escapeHtml(task.title)}</p>
+                <p class="task-card-meta">${escapeHtml(formatLocaleDate(task.touchOn, me.language))}</p>
+                <p class="task-card-title">${escapeHtml(taskDisplayTitle(t, task.type, task.title))}</p>
               </div>`,
           )
           .join("")}`;
       } catch {
-        previewHtml = `<p class="error">Проверьте дату</p>`;
+        previewHtml = `<p class="error">${escapeHtml(t.checkDate)}</p>`;
       }
     }
 
@@ -86,6 +104,7 @@ export async function renderPurchaseNew(
         productId = p.id;
         productName = p.name;
         durationDays = p.durationDays;
+        syncDraft();
         draw();
       })();
     });
@@ -93,6 +112,7 @@ export async function renderPurchaseNew(
     const dateInput = screen.querySelector("#pur-date") as HTMLInputElement;
     dateInput.onchange = () => {
       purchasedOn = dateInput.value;
+      syncDraft();
       draw();
     };
 
@@ -107,10 +127,11 @@ export async function renderPurchaseNew(
         }
         try {
           await recordPurchaseForClient(clientId, productId, assertIsoDate(purchasedOn));
-          await persistDb();
+          await persistLocalChanges();
+          onDraftChange(emptyPurchaseNewDraft());
           onBack();
         } catch (e) {
-          err.textContent = e instanceof DomainError ? e.message : String(e);
+          err.textContent = userErrorMessage(e, t);
           err.hidden = false;
         }
       })();

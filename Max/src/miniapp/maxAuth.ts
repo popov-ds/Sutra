@@ -48,8 +48,9 @@ export function validateMaxInitData(appData: string, botToken?: string): MaxWebA
     if (k === "auth_date") authDate = Number(v);
     if (k === "user") {
       try {
-        const user = JSON.parse(v) as { id?: number };
-        if (user.id && Number.isFinite(user.id)) maxUserId = user.id;
+        const user = JSON.parse(v) as { id?: number; user_id?: number };
+        const uid = user.id ?? user.user_id;
+        if (uid && Number.isFinite(uid)) maxUserId = uid;
       } catch {
         return null;
       }

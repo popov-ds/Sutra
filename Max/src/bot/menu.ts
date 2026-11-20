@@ -1,11 +1,16 @@
-import { config } from "../config.js";
-import { isProTier } from "../domain/plan.js";
 import { getBotUser, upsertBotUser } from "../db/botUsers.js";
 import { answerCallback, sendMessage, type MaxUpdate } from "../max/client.js";
 import { actionForMenuText, allMenuLabels, MENU_PAYLOADS, strings, type AppLanguage } from "./i18n.js";
 import { showProInfo } from "./billingFlow.js";
 import { mainMenuKeyboard } from "./keyboard.js";
-import { handleSettingsCallback, sendSettingsMain, tryHandleDialogMessage } from "./settingsFlow.js";
+import {
+  cancelPromoDialog,
+  handlePromoCallback,
+  PROMO_ENTER_PAYLOAD,
+  tryHandlePromoMessage,
+} from "./promoFlow.js";
+import { handleSettingsCallback, sendSettingsMain } from "./settingsFlow.js";
+import { tariffMessage } from "../services/tariff.js";
 
 const MENU_LABELS = allMenuLabels();
 
@@ -17,8 +22,13 @@ function userIdFromUpdate(update: MaxUpdate): number | null {
 }
 
 async function langFor(maxUserId: number): Promise<AppLanguage> {
-  const u = await getBotUser(maxUserId);
-  return u?.language ?? "ru";
+  try {
+    const u = await getBotUser(maxUserId);
+    return u?.language ?? "ru";
+  } catch (err) {
+    console.error("langFor:", err);
+    return "ru";
+  }
 }
 
 async function replyWithMenu(maxUserId: number, text: string, lang?: AppLanguage): Promise<void> {
@@ -35,14 +45,12 @@ export async function sendWelcome(maxUserId: number): Promise<void> {
   await upsertBotUser(maxUserId, {});
   const lang = await langFor(maxUserId);
   const t = strings(lang);
-  await replyWithMenu(maxUserId, `${t.welcome}\n\n${t.menuHint}`, lang);
+  await replyWithMenu(maxUserId, t.welcome, lang);
 }
 
 async function handleAction(maxUserId: number, action: keyof typeof MENU_PAYLOADS): Promise<void> {
   const lang = await langFor(maxUserId);
   const t = strings(lang);
-  const user = await upsertBotUser(maxUserId, {});
-
   if (action === "settings") {
     await sendSettingsMain(maxUserId, lang);
     return;
@@ -54,7 +62,7 @@ async function handleAction(maxUserId: number, action: keyof typeof MENU_PAYLOAD
 
   let text: string = t.unknown;
   if (action === "tariff") {
-    text = isProTier(user.tier) ? t.tariffPro : t.tariffFree(config.freeRecordLimit);
+    text = await tariffMessage(maxUserId, lang);
   } else if (action === "help") {
     text = t.help;
   }
@@ -69,8 +77,15 @@ export async function handleUpdate(update: MaxUpdate): Promise<void> {
   const callbackPayload = update.callback?.payload;
   const callbackId = update.callback?.callback_id;
   if (callbackPayload) {
+    if (callbackId) {
+      await answerCallback(callbackId).catch((err) => console.error("answerCallback:", err));
+    }
     try {
-      if (callbackPayload.startsWith("sutra:")) {
+      if (callbackPayload === PROMO_ENTER_PAYLOAD) {
+        await handlePromoCallback(maxUserId, await langFor(maxUserId));
+      } else if (callbackPayload === "sutra:promo:cancel") {
+        await cancelPromoDialog(maxUserId, await langFor(maxUserId));
+      } else if (callbackPayload.startsWith("sutra:")) {
         await handleSettingsCallback(maxUserId, callbackPayload);
       } else if (callbackPayload.startsWith("menu:")) {
         const key = callbackPayload.slice("menu:".length) as keyof typeof MENU_PAYLOADS;
@@ -78,10 +93,14 @@ export async function handleUpdate(update: MaxUpdate): Promise<void> {
           await handleAction(maxUserId, key);
         }
       }
-    } finally {
-      if (callbackId) {
-        await answerCallback(callbackId).catch((err) => console.error("answerCallback:", err));
-      }
+    } catch (err) {
+      console.error("callback handler:", callbackPayload, err);
+      const lang = await langFor(maxUserId);
+      await sendMessage({
+        userId: maxUserId,
+        text: strings(lang).botTempError,
+        buttons: mainMenuKeyboard(lang, maxUserId),
+      });
     }
     return;
   }
@@ -90,7 +109,8 @@ export async function handleUpdate(update: MaxUpdate): Promise<void> {
   if (!textRaw) return;
   if (update.message?.sender?.is_bot) return;
 
-  if (await tryHandleDialogMessage(maxUserId, textRaw)) return;
+  const lang = await langFor(maxUserId);
+  if (await tryHandlePromoMessage(maxUserId, textRaw, lang)) return;
 
   const textLower = textRaw.toLowerCase();
   if (textLower === "/start" || textLower === "старт" || textLower === "start") {
@@ -114,8 +134,10 @@ export async function handleUpdate(update: MaxUpdate): Promise<void> {
     return;
   }
 
-  if (MENU_LABELS.has(textRaw)) return;
+  if (MENU_LABELS.has(textRaw)) {
+    await replyWithMenu(maxUserId, strings(lang).unknown, lang);
+    return;
+  }
 
-  const lang = await langFor(maxUserId);
   await replyWithMenu(maxUserId, strings(lang).unknown, lang);
 }
