@@ -12,3 +12,7 @@ export function listScreenLayout(stickyHtml: string, listBodyHtml: string): stri
 export function listRowDeleteIcon(): string {
   return `<span class="material-symbols-outlined" aria-hidden="true">delete</span>`;
 }
+
+export function listRowEditIcon(): string {
+  return `<span class="material-symbols-outlined" aria-hidden="true">edit</span>`;
+}

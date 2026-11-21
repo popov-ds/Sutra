@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { Component, Suspense, type ReactNode } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
+import { FreeTierBannerDock } from '@/ads/FreeTierBannerDock';
 import { initializeDatabase } from '@/db/initialize';
 import { systemLanguage } from '@/i18n/language';
 import { LanguageProvider, useStrings } from '@/i18n/LanguageProvider';

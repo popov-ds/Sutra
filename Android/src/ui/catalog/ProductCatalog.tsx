@@ -1,16 +1,18 @@
 import { useSQLiteContext } from 'expo-sqlite';
-import { useCallback, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
 
 import { createProduct, deleteProduct, listProducts, updateProduct } from '@/data/products';
 import type { Product } from '@/domain/types';
 import { useStrings } from '@/i18n/LanguageProvider';
 import { translateError } from '@/i18n/text';
 import { theme } from '@/ui/theme';
+import { ConfirmDeleteDialog } from '@/ui/ConfirmDeleteDialog';
 import { Button, Field, Notice } from '@/ui/ui';
 import { useLoader } from '@/ui/useLoader';
 
 import { CatalogEditorModal } from './CatalogEditorModal';
+import { CatalogEntryRow } from './CatalogEntryRow';
 import { catalogStyles as styles } from './catalogStyles';
 
 type EditorMode = 'add' | 'edit' | null;
@@ -20,6 +22,8 @@ type ProductCatalogProps = {
   pickerSelectedId?: string | null;
   onPickerSelectedIdChange?: (id: string | null) => void;
   onPickerConfirm?: (id: string) => void;
+  /** Инкремент из header «Добавить» на экране справочника. */
+  addRequestTick?: number;
 };
 
 export function ProductCatalog({
@@ -27,46 +31,48 @@ export function ProductCatalog({
   pickerSelectedId,
   onPickerSelectedIdChange,
   onPickerConfirm,
+  addRequestTick = 0,
 }: ProductCatalogProps) {
   const db = useSQLiteContext();
   const text = useStrings();
   const { data, error, loading } = useLoader(pickerMode ? 'products-picker' : 'products', () => listProducts(db));
-  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [mode, setMode] = useState<EditorMode>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [days, setDays] = useState('');
   const [notice, setNotice] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-
-  const activeSelectedId = pickerMode ? (pickerSelectedId ?? null) : selectedId;
-  const setActiveSelectedId = pickerMode ? onPickerSelectedIdChange : setSelectedId;
-
-  const selected = data?.find((item) => item.id === activeSelectedId) ?? null;
+  const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
 
   const resetEditor = useCallback(() => {
     setMode(null);
+    setEditingId(null);
     setName('');
     setDays('');
     setNotice(null);
   }, []);
 
-  const startAdd = () => {
-    setActiveSelectedId?.(null);
+  const startAdd = useCallback(() => {
+    onPickerSelectedIdChange?.(null);
     setMode('add');
+    setEditingId(null);
     setName('');
     setDays('');
     setNotice(null);
-  };
+  }, [onPickerSelectedIdChange]);
 
-  const startEdit = () => {
-    if (!selected) {
-      setNotice(text.selectProductFirst);
-      return;
-    }
+  useEffect(() => {
+    if (addRequestTick === 0) return;
+    startAdd();
+  }, [addRequestTick, startAdd]);
+
+  const openEdit = (product: Product) => {
+    setEditingId(product.id);
     setMode('edit');
-    setName(selected.name);
-    setDays(String(selected.durationDays));
+    setName(product.name);
+    setDays(String(product.durationDays));
     setNotice(null);
+    onPickerSelectedIdChange?.(product.id);
   };
 
   const save = async () => {
@@ -76,9 +82,9 @@ export function ProductCatalog({
       const durationDays = Number(days);
       if (mode === 'add') {
         const created = await createProduct(db, name, durationDays);
-        setActiveSelectedId?.(created.id);
-      } else if (mode === 'edit' && activeSelectedId) {
-        await updateProduct(db, activeSelectedId, name, durationDays);
+        onPickerSelectedIdChange?.(created.id);
+      } else if (mode === 'edit' && editingId) {
+        await updateProduct(db, editingId, name, durationDays);
       }
       resetEditor();
     } catch (caught) {
@@ -88,46 +94,21 @@ export function ProductCatalog({
     }
   };
 
-  const confirmDelete = () => {
-    if (!selected) {
-      setNotice(text.selectProductFirst);
-      return;
-    }
-    Alert.alert(text.deleteProduct, text.deleteProductConfirm(selected.name), [
-      { text: text.back, style: 'cancel' },
-      {
-        text: text.deleteProduct,
-        style: 'destructive',
-        onPress: () => void remove(selected.id),
-      },
-    ]);
-  };
+  const confirmDeleteRow = (product: Product) => setDeleteTarget(product);
 
   const remove = async (productId: string) => {
-    setNotice(null);
-    try {
-      await deleteProduct(db, productId);
-      if (activeSelectedId === productId) setActiveSelectedId?.(null);
-      resetEditor();
-    } catch (caught) {
-      setNotice(translateError(caught, text, text.deleteProductFailed));
-    }
+    await deleteProduct(db, productId);
+    if (editingId === productId) resetEditor();
+    if (pickerSelectedId === productId) onPickerSelectedIdChange?.(null);
   };
 
-  const pickRow = (productId: string) => {
-    if (pickerMode && !mode && onPickerConfirm) {
-      if (activeSelectedId === productId) onPickerConfirm(productId);
-      else setActiveSelectedId?.(productId);
+  const onRowPress = (product: Product) => {
+    if (pickerMode && onPickerConfirm) {
+      onPickerSelectedIdChange?.(product.id);
+      onPickerConfirm(product.id);
       return;
     }
-    setActiveSelectedId?.(productId);
-    if (mode === 'edit') {
-      const product = data?.find((item) => item.id === productId);
-      if (product) {
-        setName(product.name);
-        setDays(String(product.durationDays));
-      }
-    }
+    openEdit(product);
   };
 
   return (
@@ -137,12 +118,16 @@ export function ProductCatalog({
         {loading && !data ? <ActivityIndicator color={theme.service} /> : null}
         {data && data.length === 0 ? <Text style={styles.empty}>{text.emptyProducts}</Text> : null}
         {data?.map((product) => (
-          <ProductRow
+          <CatalogEntryRow
             key={product.id}
-            product={product}
-            selected={product.id === activeSelectedId}
-            durationLabel={text.durationDays(product.durationDays)}
-            onPress={() => pickRow(product.id)}
+            title={product.name}
+            meta={text.durationDays(product.durationDays)}
+            selected={pickerMode && product.id === pickerSelectedId}
+            onPress={() => onRowPress(product)}
+            onEdit={pickerMode ? () => openEdit(product) : undefined}
+            editLabel={text.editProduct}
+            onDelete={() => confirmDeleteRow(product)}
+            deleteLabel={text.deleteProduct}
           />
         ))}
 
@@ -159,59 +144,22 @@ export function ProductCatalog({
         </View>
       </CatalogEditorModal>
 
-      <View style={styles.toolbar}>
-        <ToolbarButton label={text.add} onPress={startAdd} />
-        <ToolbarButton label={text.editProduct} onPress={startEdit} disabled={!selected} />
-        <ToolbarButton label={text.deleteProduct} onPress={confirmDelete} disabled={!selected} danger />
-      </View>
-
+      <ConfirmDeleteDialog
+        visible={deleteTarget !== null}
+        title={text.deleteProduct}
+        message={deleteTarget ? text.deleteProductConfirm(deleteTarget.name) : ''}
+        confirmLabel={text.deleteProduct}
+        cancelLabel={text.back}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={async () => {
+          if (!deleteTarget) return;
+          try {
+            await remove(deleteTarget.id);
+          } catch (caught) {
+            throw new Error(translateError(caught, text, text.deleteProductFailed));
+          }
+        }}
+      />
     </View>
-  );
-}
-
-function ProductRow({
-  product,
-  selected,
-  durationLabel,
-  onPress,
-}: {
-  product: Product;
-  selected: boolean;
-  durationLabel: string;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityState={{ selected }}
-      onPress={onPress}
-      style={[styles.row, selected && styles.rowOn]}
-    >
-      <Text style={[styles.rowTitle, selected && styles.rowTitleOn]}>{product.name}</Text>
-      <Text style={[styles.rowMeta, selected && styles.rowMetaOn]}>{durationLabel}</Text>
-    </Pressable>
-  );
-}
-
-function ToolbarButton({
-  label,
-  onPress,
-  disabled,
-  danger,
-}: {
-  label: string;
-  onPress: () => void;
-  disabled?: boolean;
-  danger?: boolean;
-}) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      disabled={disabled}
-      onPress={onPress}
-      style={[styles.tool, disabled && styles.toolDisabled, danger && !disabled && styles.toolDanger]}
-    >
-      <Text style={[styles.toolText, danger && !disabled && styles.toolTextDanger]}>{label}</Text>
-    </Pressable>
   );
 }

@@ -1,7 +1,9 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { FreeTierBannerDock } from '@/ads/FreeTierBannerDock';
 import { useStrings } from '@/i18n/LanguageProvider';
 import { Button } from '@/ui/ui';
 import { theme } from '@/ui/theme';
@@ -34,16 +36,24 @@ export function CatalogPickerModal({
 }: CatalogPickerModalProps) {
   const text = useStrings();
   const title = kind === 'product' ? text.productLabel : text.clientRequestLabel;
+  const [addTick, setAddTick] = useState(0);
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
-      <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+      <SafeAreaView style={styles.safe} edges={['top']}>
         <View style={styles.header}>
           <Pressable accessibilityRole="button" accessibilityLabel={text.back} onPress={onClose} hitSlop={8}>
             <MaterialCommunityIcons name="close" size={26} color={theme.ink} />
           </Pressable>
           <Text style={styles.title}>{title}</Text>
-          <View style={styles.headerSpacer} />
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => setAddTick((t) => t + 1)}
+            hitSlop={8}
+            style={styles.headerAdd}
+          >
+            <Text style={styles.headerAddText}>{text.add}</Text>
+          </Pressable>
         </View>
         {allowClear && onClear ? (
           <View style={styles.clearRow}>
@@ -57,27 +67,32 @@ export function CatalogPickerModal({
             />
           </View>
         ) : null}
-        {kind === 'product' ? (
-          <ProductCatalog
-            pickerMode
-            pickerSelectedId={selectedId}
-            onPickerSelectedIdChange={onSelectedIdChange}
-            onPickerConfirm={(id) => {
-              onConfirm(id);
-              onClose();
-            }}
-          />
-        ) : (
-          <ClientRequestCatalog
-            pickerMode
-            pickerSelectedId={selectedId}
-            onPickerSelectedIdChange={onSelectedIdChange}
-            onPickerConfirm={(id) => {
-              onConfirm(id);
-              onClose();
-            }}
-          />
-        )}
+        <View style={styles.body}>
+          {kind === 'product' ? (
+            <ProductCatalog
+              addRequestTick={addTick}
+              pickerMode
+              pickerSelectedId={selectedId}
+              onPickerSelectedIdChange={onSelectedIdChange}
+              onPickerConfirm={(id) => {
+                onConfirm(id);
+                onClose();
+              }}
+            />
+          ) : (
+            <ClientRequestCatalog
+              addRequestTick={addTick}
+              pickerMode
+              pickerSelectedId={selectedId}
+              onPickerSelectedIdChange={onSelectedIdChange}
+              onPickerConfirm={(id) => {
+                onConfirm(id);
+                onClose();
+              }}
+            />
+          )}
+        </View>
+        <FreeTierBannerDock />
       </SafeAreaView>
     </Modal>
   );
@@ -95,6 +110,8 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   title: { color: theme.ink, fontSize: 17, fontWeight: '700' },
-  headerSpacer: { width: 26 },
+  headerAdd: { paddingHorizontal: 8, paddingVertical: 6 },
+  headerAddText: { color: theme.service, fontSize: 16, fontWeight: '700' },
   clearRow: { paddingHorizontal: 16, paddingTop: 8 },
+  body: { flex: 1 },
 });

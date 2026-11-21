@@ -214,6 +214,38 @@ input.input--placeholder-muted::placeholder {
   font-size: 22px;
 }
 
+.list-row-edit {
+  flex-shrink: 0;
+  width: 48px;
+  border: none;
+  border-left: 1px solid var(--line);
+  background: #faf8f5;
+  color: var(--service, #0f6e6b);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.list-row-edit .material-symbols-outlined {
+  font-size: 22px;
+}
+
+.catalog-header-spacer {
+  width: 26px;
+  flex-shrink: 0;
+}
+
+.catalog-header .link-action {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--service, #0f6e6b);
+  flex-shrink: 0;
+  margin-left: auto;
+  padding: 0;
+}
+
 .bottom-dock {
   flex-shrink: 0;
   background: var(--card);
@@ -849,6 +881,21 @@ body.app-cloud #screen {
 
 .catalog-header {
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.catalog-header .form-title {
+  flex: 1;
+  margin: 0;
+  text-align: center;
+  min-width: 0;
+}
+
+.catalog-header .link-back {
+  flex-shrink: 0;
+  padding-bottom: 0;
 }
 
 .catalog-body {
@@ -930,9 +977,16 @@ body.app-cloud #screen {
 }
 
 .confirm-message {
-  margin: 0 0 18px;
+  margin: 0 0 10px;
   line-height: 1.45;
   font-size: 0.95rem;
+}
+
+.confirm-error {
+  margin: 0 0 14px;
+  color: #b3261e;
+  font-size: 0.9rem;
+  line-height: 1.4;
 }
 
 .confirm-actions {

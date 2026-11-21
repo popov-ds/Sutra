@@ -11,12 +11,28 @@ const {
 } = require('@expo/config-plugins');
 
 const SDK_VERSION = '11.2.0';
+const YANDEX_MOBILE_ADS_VERSION = '8.7.0';
 const RUSTORE_MAVEN = 'https://nexus-external.rustore.ru/repository/maven-rustore-exposed';
+const YANDEX_ADS_MAVEN = 'https://ads.maven.yandex.net/';
 function ensureMavenRepo(contents) {
   if (contents.includes('maven-rustore-exposed')) return contents;
   return contents.replace(
     /maven\s*\{\s*url\s*['"]https:\/\/www\.jitpack\.io['"]\s*\}/,
     (match) => `${match}\n    maven { url = uri("${RUSTORE_MAVEN}") }`,
+  );
+}
+
+function ensureYandexAdsMaven(contents) {
+  if (contents.includes('ads.maven.yandex.net')) return contents;
+  if (contents.includes('maven-rustore-exposed')) {
+    return contents.replace(
+      /maven\s*\{\s*url\s*=\s*uri\("https:\/\/nexus-external\.rustore\.ru\/repository\/maven-rustore-exposed"\)\s*\}/,
+      (match) => `${match}\n    maven { url = uri("${YANDEX_ADS_MAVEN}") }`,
+    );
+  }
+  return contents.replace(
+    /maven\s*\{\s*url\s*['"]https:\/\/www\.jitpack\.io['"]\s*\}/,
+    (match) => `${match}\n    maven { url = uri("${YANDEX_ADS_MAVEN}") }`,
   );
 }
 
@@ -28,13 +44,31 @@ function ensurePayDependency(contents) {
   );
 }
 
+function ensureMobileAdsDependency(contents) {
+  const dep = `implementation("com.yandex.android:mobileads:${YANDEX_MOBILE_ADS_VERSION}")`;
+  if (contents.includes('com.yandex.android:mobileads')) {
+    return contents.replace(/implementation\("com\.yandex\.android:mobileads:[^"]+"\)/, dep);
+  }
+  if (contents.includes('rustore.sdk-wrapper.react-native:pay')) {
+    return contents.replace(
+      /implementation\("ru\.rustore\.sdk-wrapper\.react-native:pay:[^"]+"\)/,
+      (match) => `${match}\n    ${dep}`,
+    );
+  }
+  return contents.replace(/dependencies\s*\{/, `dependencies {\n    ${dep}`);
+}
+
 function withRuStorePayGradle(config) {
   config = withProjectBuildGradle(config, (mod) => {
-    mod.modResults.contents = ensureMavenRepo(mod.modResults.contents);
+    let next = ensureMavenRepo(mod.modResults.contents);
+    next = ensureYandexAdsMaven(next);
+    mod.modResults.contents = next;
     return mod;
   });
   config = withAppBuildGradle(config, (mod) => {
-    mod.modResults.contents = ensurePayDependency(mod.modResults.contents);
+    let next = ensurePayDependency(mod.modResults.contents);
+    next = ensureMobileAdsDependency(next);
+    mod.modResults.contents = next;
     return mod;
   });
   return config;
@@ -115,12 +149,12 @@ function withRuStoreConsoleString(config, consoleAppId) {
   });
 }
 
-function withRuStoreLegacyArch(config) {
+/** RN ≥ 0.82: newArchEnabled=false игнорируется; строку лучше убрать (New Arch по умолчанию). */
+function withDropDeprecatedNewArchFlag(config) {
   return withGradleProperties(config, (mod) => {
-    const props = mod.modResults;
-    const entry = props.find((item) => item.type === 'property' && item.key === 'newArchEnabled');
-    if (entry) entry.value = 'false';
-    else props.push({ type: 'property', key: 'newArchEnabled', value: 'false' });
+    mod.modResults = mod.modResults.filter(
+      (item) => !(item.type === 'property' && item.key === 'newArchEnabled'),
+    );
     return mod;
   });
 }
@@ -218,7 +252,7 @@ module.exports = function withRustorePay(config, props = {}) {
   const consoleAppId = props.consoleAppId ?? process.env.EXPO_PUBLIC_RUSTORE_CONSOLE_APP_ID ?? '';
 
   config = withRuStorePayGradle(config);
-  config = withRuStoreLegacyArch(config);
+  config = withDropDeprecatedNewArchFlag(config);
   config = withRuStoreConsoleString(config, consoleAppId);
   config = withRuStorePayManifest(config, { scheme, consoleAppId });
   config = withRuStoreNativeRegistration(config);

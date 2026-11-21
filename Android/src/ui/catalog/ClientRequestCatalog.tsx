@@ -1,6 +1,6 @@
 import { useSQLiteContext } from 'expo-sqlite';
-import { useCallback, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
 
 import {
   createClientRequest,
@@ -12,10 +12,12 @@ import type { ClientRequest } from '@/domain/types';
 import { useStrings } from '@/i18n/LanguageProvider';
 import { translateError } from '@/i18n/text';
 import { theme } from '@/ui/theme';
+import { ConfirmDeleteDialog } from '@/ui/ConfirmDeleteDialog';
 import { Button, Field, Notice } from '@/ui/ui';
 import { useLoader } from '@/ui/useLoader';
 
 import { CatalogEditorModal } from './CatalogEditorModal';
+import { CatalogEntryRow } from './CatalogEntryRow';
 import { catalogStyles as styles } from './catalogStyles';
 
 type EditorMode = 'add' | 'edit' | null;
@@ -25,6 +27,7 @@ type ClientRequestCatalogProps = {
   pickerSelectedId?: string | null;
   onPickerSelectedIdChange?: (id: string | null) => void;
   onPickerConfirm?: (id: string) => void;
+  addRequestTick?: number;
 };
 
 export function ClientRequestCatalog({
@@ -32,43 +35,45 @@ export function ClientRequestCatalog({
   pickerSelectedId,
   onPickerSelectedIdChange,
   onPickerConfirm,
+  addRequestTick = 0,
 }: ClientRequestCatalogProps) {
   const db = useSQLiteContext();
   const text = useStrings();
   const loaderKey = pickerMode ? 'client-requests-picker' : 'client-requests';
   const { data, error, loading } = useLoader(loaderKey, () => listClientRequests(db));
-  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [mode, setMode] = useState<EditorMode>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [notice, setNotice] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-
-  const activeSelectedId = pickerMode ? (pickerSelectedId ?? null) : selectedId;
-  const setActiveSelectedId = pickerMode ? onPickerSelectedIdChange : setSelectedId;
-
-  const selected = data?.find((item) => item.id === activeSelectedId) ?? null;
+  const [deleteTarget, setDeleteTarget] = useState<ClientRequest | null>(null);
 
   const resetEditor = useCallback(() => {
     setMode(null);
+    setEditingId(null);
     setName('');
     setNotice(null);
   }, []);
 
-  const startAdd = () => {
-    setActiveSelectedId?.(null);
+  const startAdd = useCallback(() => {
+    onPickerSelectedIdChange?.(null);
     setMode('add');
+    setEditingId(null);
     setName('');
     setNotice(null);
-  };
+  }, [onPickerSelectedIdChange]);
 
-  const startEdit = () => {
-    if (!selected) {
-      setNotice(text.selectClientRequestFirst);
-      return;
-    }
+  useEffect(() => {
+    if (addRequestTick === 0) return;
+    startAdd();
+  }, [addRequestTick, startAdd]);
+
+  const openEdit = (request: ClientRequest) => {
+    setEditingId(request.id);
     setMode('edit');
-    setName(selected.name);
+    setName(request.name);
     setNotice(null);
+    onPickerSelectedIdChange?.(request.id);
   };
 
   const save = async () => {
@@ -77,9 +82,9 @@ export function ClientRequestCatalog({
     try {
       if (mode === 'add') {
         const created = await createClientRequest(db, name);
-        setActiveSelectedId?.(created.id);
-      } else if (mode === 'edit' && activeSelectedId) {
-        await updateClientRequest(db, activeSelectedId, name);
+        onPickerSelectedIdChange?.(created.id);
+      } else if (mode === 'edit' && editingId) {
+        await updateClientRequest(db, editingId, name);
       }
       resetEditor();
     } catch (caught) {
@@ -89,43 +94,21 @@ export function ClientRequestCatalog({
     }
   };
 
-  const confirmDelete = () => {
-    if (!selected) {
-      setNotice(text.selectClientRequestFirst);
-      return;
-    }
-    Alert.alert(text.deleteClientRequest, text.deleteClientRequestConfirm(selected.name), [
-      { text: text.back, style: 'cancel' },
-      {
-        text: text.deleteClientRequest,
-        style: 'destructive',
-        onPress: () => void remove(selected.id),
-      },
-    ]);
-  };
+  const confirmDeleteRow = (request: ClientRequest) => setDeleteTarget(request);
 
   const remove = async (requestId: string) => {
-    setNotice(null);
-    try {
-      await deleteClientRequest(db, requestId);
-      if (activeSelectedId === requestId) setActiveSelectedId?.(null);
-      resetEditor();
-    } catch (caught) {
-      setNotice(translateError(caught, text, text.deleteClientRequestFailed));
-    }
+    await deleteClientRequest(db, requestId);
+    if (editingId === requestId) resetEditor();
+    if (pickerSelectedId === requestId) onPickerSelectedIdChange?.(null);
   };
 
-  const pickRow = (requestId: string) => {
-    if (pickerMode && !mode && onPickerConfirm) {
-      if (activeSelectedId === requestId) onPickerConfirm(requestId);
-      else setActiveSelectedId?.(requestId);
+  const onRowPress = (request: ClientRequest) => {
+    if (pickerMode && onPickerConfirm) {
+      onPickerSelectedIdChange?.(request.id);
+      onPickerConfirm(request.id);
       return;
     }
-    setActiveSelectedId?.(requestId);
-    if (mode === 'edit') {
-      const request = data?.find((item) => item.id === requestId);
-      if (request) setName(request.name);
-    }
+    openEdit(request);
   };
 
   return (
@@ -135,11 +118,15 @@ export function ClientRequestCatalog({
         {loading && !data ? <ActivityIndicator color={theme.service} /> : null}
         {data && data.length === 0 ? <Text style={styles.empty}>{text.emptyClientRequests}</Text> : null}
         {data?.map((request) => (
-          <RequestRow
+          <CatalogEntryRow
             key={request.id}
-            request={request}
-            selected={request.id === activeSelectedId}
-            onPress={() => pickRow(request.id)}
+            title={request.name}
+            selected={pickerMode && request.id === pickerSelectedId}
+            onPress={() => onRowPress(request)}
+            onEdit={pickerMode ? () => openEdit(request) : undefined}
+            editLabel={text.editClientRequest}
+            onDelete={() => confirmDeleteRow(request)}
+            deleteLabel={text.deleteClientRequest}
           />
         ))}
 
@@ -161,56 +148,22 @@ export function ClientRequestCatalog({
         </View>
       </CatalogEditorModal>
 
-      <View style={styles.toolbar}>
-        <ToolbarButton label={text.add} onPress={startAdd} />
-        <ToolbarButton label={text.editClientRequest} onPress={startEdit} disabled={!selected} />
-        <ToolbarButton label={text.deleteClientRequest} onPress={confirmDelete} disabled={!selected} danger />
-      </View>
-
+      <ConfirmDeleteDialog
+        visible={deleteTarget !== null}
+        title={text.deleteClientRequest}
+        message={deleteTarget ? text.deleteClientRequestConfirm(deleteTarget.name) : ''}
+        confirmLabel={text.deleteClientRequest}
+        cancelLabel={text.back}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={async () => {
+          if (!deleteTarget) return;
+          try {
+            await remove(deleteTarget.id);
+          } catch (caught) {
+            throw new Error(translateError(caught, text, text.deleteClientRequestFailed));
+          }
+        }}
+      />
     </View>
-  );
-}
-
-function RequestRow({
-  request,
-  selected,
-  onPress,
-}: {
-  request: ClientRequest;
-  selected: boolean;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityState={{ selected }}
-      onPress={onPress}
-      style={[styles.row, selected && styles.rowOn]}
-    >
-      <Text style={[styles.rowTitle, selected && styles.rowTitleOn]}>{request.name}</Text>
-    </Pressable>
-  );
-}
-
-function ToolbarButton({
-  label,
-  onPress,
-  disabled,
-  danger,
-}: {
-  label: string;
-  onPress: () => void;
-  disabled?: boolean;
-  danger?: boolean;
-}) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      disabled={disabled}
-      onPress={onPress}
-      style={[styles.tool, disabled && styles.toolDisabled, danger && !disabled && styles.toolDanger]}
-    >
-      <Text style={[styles.toolText, danger && !disabled && styles.toolTextDanger]}>{label}</Text>
-    </Pressable>
   );
 }

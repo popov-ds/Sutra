@@ -1,23 +1,16 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router, type Href } from 'expo-router';
 import { Tabs } from 'expo-router/js-tabs';
-import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { RsyaBanner, bannerDockHeightDp } from '@/ads/RsyaBanner';
 import { useStrings } from '@/i18n/LanguageProvider';
-import { useSubscription } from '@/subscription/SubscriptionProvider';
 import { SettingsHeaderButton } from '@/ui/SettingsHeaderButton';
 import { theme } from '@/ui/theme';
 
 export default function TabLayout() {
   const text = useStrings();
-  const { isPro } = useSubscription();
-  const [bannerDockHeight, setBannerDockHeight] = useState(() => bannerDockHeightDp(50));
-  const bannerPad = isPro ? 0 : bannerDockHeight;
 
   return (
-    <View style={styles.root}>
     <Tabs
       screenOptions={({ route }) => ({
         headerStyle: { backgroundColor: theme.bg },
@@ -44,7 +37,7 @@ export default function TabLayout() {
             />
           </View>
         ),
-        sceneStyle: { backgroundColor: theme.bg, paddingBottom: bannerPad },
+        sceneStyle: { backgroundColor: theme.bg },
       })}
     >
       <Tabs.Screen name="index" options={{ title: text.today }} />
@@ -62,13 +55,6 @@ export default function TabLayout() {
       />
       <Tabs.Screen name="directories" options={{ title: text.directories, headerShown: false }} />
     </Tabs>
-    {!isPro ? (
-      <View style={styles.bannerDock}>
-        <RsyaBanner onSlotHeightDp={setBannerDockHeight} />
-      </View>
-    ) : null}
-    </View>
-  );
 }
 
 function tabIcon(routeName: string): keyof typeof MaterialCommunityIcons.glyphMap {
@@ -87,9 +73,6 @@ function HeaderLink({ href, label }: { href: Href; label: string }) {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  bannerDock: { bottom: 56, left: 0, position: 'absolute', right: 0, zIndex: 2 },
-  iconWrap: {
-    alignItems: 'center',
     borderRadius: 16,
     minWidth: 72,
     paddingHorizontal: 16,
