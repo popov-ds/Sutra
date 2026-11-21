@@ -75,6 +75,14 @@ Nginx: `deploy/vps/nginx-sutra.max.master-solver.conf.example` — **отдел�
 - Mini App: `PUBLIC_BASE_URL/miniapp/`
 - Webhook (если отключите polling): `MAX_USE_POLLING=0`, `POST …/webhooks/max`, заголовок `X-Max-Bot-Api-Secret`
 
+## 5. ЮKassa
+
+В `.env` на VPS: `YOOKASSA_SHOP_ID`, `YOOKASSA_SECRET_KEY`, `PRO_MONTH_RUB`, `PRO_YEAR_RUB` (формат `299.00`).
+
+- Уведомления: `https://sutra.max.master-solver.ru/webhooks/yookassa` (проксируется тем же `location /`, что Mini App)
+- Return URL создаётся API: `/pay/return`
+- После деплоя: в боте «💎 Pro» → «Оформить Pro» → тестовый платёж → «📊 Тариф» должен показать Pro
+
 ## Проверка изоляции
 
 ```bash

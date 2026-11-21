@@ -23,6 +23,17 @@ export const config = {
   postgresPassword: process.env.POSTGRES_PASSWORD?.trim() ?? "",
   promoCodes: parsePromoCodesEnv(process.env.PROMO_CODES ?? ""),
   freeRecordLimit: 10,
+  yookassaShopId: process.env.YOOKASSA_SHOP_ID?.trim() ?? "",
+  yookassaSecretKey: process.env.YOOKASSA_SECRET_KEY?.trim() ?? "",
+  /** Суммы с копейками, например 299.00 */
+  proMonthRub: process.env.PRO_MONTH_RUB?.trim() ?? "",
+  proYearRub: process.env.PRO_YEAR_RUB?.trim() ?? "",
+  /** Чек в теле платежа (если в кабинете включены чеки 54-ФЗ). 0 — не слать receipt */
+  yookassaFiscalization: (process.env.YOOKASSA_FISCALIZATION ?? "1").trim() !== "0",
+  /** Код НДС в чеке: 1 — без НДС (типично УСН) */
+  yookassaVatCode: Number(process.env.YOOKASSA_VAT_CODE ?? "1") || 1,
+  /** Запасной email покупателя для чека, если нет cloud_email и поля на странице */
+  yookassaDefaultReceiptEmail: process.env.YOOKASSA_DEFAULT_RECEIPT_EMAIL?.trim() ?? "",
 };
 
 export function assertBotReady(): void {

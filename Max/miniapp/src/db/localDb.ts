@@ -329,18 +329,32 @@ export async function loadClientCard(clientId: string): Promise<ClientCard | nul
   return { client, purchases, tasks };
 }
 
-async function assertFreeLimit(isPro: boolean, freeLimit: number): Promise<void> {
+function countActive(database: Awaited<ReturnType<typeof getLocalDb>>, table: string): number {
+  const row = database.exec(`SELECT COUNT(*) AS c FROM ${table} WHERE deleted_at IS NULL`)[0];
+  return Number(row?.values[0]?.[0] ?? 0);
+}
+
+async function assertCanAddClients(isPro: boolean, freeLimit: number): Promise<void> {
   if (isPro) return;
   const database = await getLocalDb();
-  const row = database.exec(
-    `SELECT
-      (SELECT COUNT(*) FROM clients WHERE deleted_at IS NULL) +
-      (SELECT COUNT(*) FROM products WHERE deleted_at IS NULL) +
-      (SELECT COUNT(*) FROM client_requests WHERE deleted_at IS NULL) AS c`,
-  )[0];
-  const total = Number(row?.values[0]?.[0] ?? 0);
-  if (total >= freeLimit) {
-    throw new DomainError("free_limit", freeLimit);
+  if (countActive(database, "clients") >= freeLimit) {
+    throw new DomainError("free_limit_clients", freeLimit);
+  }
+}
+
+async function assertCanAddProducts(isPro: boolean, freeLimit: number): Promise<void> {
+  if (isPro) return;
+  const database = await getLocalDb();
+  if (countActive(database, "products") >= freeLimit) {
+    throw new DomainError("free_limit_products", freeLimit);
+  }
+}
+
+async function assertCanAddClientRequests(isPro: boolean, freeLimit: number): Promise<void> {
+  if (isPro) return;
+  const database = await getLocalDb();
+  if (countActive(database, "client_requests") >= freeLimit) {
+    throw new DomainError("free_limit_requests", freeLimit);
   }
 }
 
@@ -350,7 +364,7 @@ export async function createClientRecord(
   freeLimit: number,
 ): Promise<string> {
   const prepared = prepareClientInput(input);
-  await assertFreeLimit(isPro, freeLimit);
+  await assertCanAddClients(isPro, freeLimit);
   const database = await getLocalDb();
   const ts = nowIso();
   const id = createId();
@@ -542,7 +556,7 @@ export async function createProductRecord(
   freeLimit: number,
 ): Promise<void> {
   const prepared = prepareProductInput(name, durationDays);
-  await assertFreeLimit(isPro, freeLimit);
+  await assertCanAddProducts(isPro, freeLimit);
   const database = await getLocalDb();
   const ts = nowIso();
   database.run(
@@ -577,7 +591,7 @@ export async function deleteProductRecord(id: string): Promise<void> {
 
 export async function createClientRequestRecord(name: string, isPro: boolean, freeLimit: number): Promise<void> {
   const prepared = prepareClientRequestInput(name);
-  await assertFreeLimit(isPro, freeLimit);
+  await assertCanAddClientRequests(isPro, freeLimit);
   const database = await getLocalDb();
   const ts = nowIso();
   database.run(

@@ -45,4 +45,6 @@ src/http/       — webhook, статика, /api/me
 miniapp/        — SPA: локальная SQLite + sync Supabase
 ```
 
-Дальнейшие шаги: доработка domain/touchPlan в `src/domain` и miniapp, billing в `src/bot/billing.ts`, initData MAX для подписи launch (когда подключите валидацию из Bridge).
+**ЮKassa (Pro):** `YOOKASSA_SHOP_ID`, `YOOKASSA_SECRET_KEY`, `PRO_MONTH_RUB`, `PRO_YEAR_RUB`; webhook `POST …/webhooks/yookassa`; оплата из чата — кнопка в «💎 Pro», страницы `/pay/start`, `/pay/return`.
+
+Дальнейшие шаги: initData MAX для подписи launch (когда подключите валидацию из Bridge).

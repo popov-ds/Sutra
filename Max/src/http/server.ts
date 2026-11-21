@@ -1,8 +1,13 @@
 import http from "node:http";
+import { handlePayCheckoutHttp } from "../billing/payCheckoutHttp.js";
+import type { YooWebhookEvent } from "../billing/yookassa.js";
+import { notifyProActivated } from "../bot/billingFlow.js";
 import { config } from "../config.js";
 import { getBotUser, upsertBotUser } from "../db/botUsers.js";
 import { dbEnabled } from "../db/pool.js";
+import { activatePro } from "../db/subscriptions.js";
 import { isProActive } from "../db/users.js";
+import { isProPlanId } from "../domain/billingPlans.js";
 import { handleUpdate } from "../bot/menu.js";
 import type { MaxUpdate } from "../max/client.js";
 import { resolveMaxUserId } from "../miniapp/resolveUser.js";
@@ -35,6 +40,10 @@ export function createHttpServer(): http.Server {
         const rawUrl = req.url ?? "/";
         const pathOnly = pathname(rawUrl);
         const method = req.method ?? "GET";
+        const queryString = (() => {
+          const q = rawUrl.indexOf("?");
+          return q >= 0 ? rawUrl.slice(q + 1) : "";
+        })();
 
         if (method === "GET" && pathOnly === "/health") {
           res.writeHead(200, { "Content-Type": "text/plain" });
@@ -56,6 +65,52 @@ export function createHttpServer(): http.Server {
           const list = "updates" in body && Array.isArray(body.updates) ? body.updates : [body as MaxUpdate];
           for (const u of list) {
             await handleUpdate(u).catch((err) => console.error("handleUpdate:", err));
+          }
+          res.writeHead(200);
+          res.end();
+          return;
+        }
+
+        if (await handlePayCheckoutHttp(method, pathOnly, queryString, res)) {
+          return;
+        }
+
+        if (method === "POST" && pathOnly === "/webhooks/yookassa") {
+          const raw = await readBody(req);
+          let event: YooWebhookEvent;
+          try {
+            event = JSON.parse(raw) as YooWebhookEvent;
+          } catch {
+            res.writeHead(400);
+            res.end();
+            return;
+          }
+          if (
+            dbEnabled() &&
+            event.event === "payment.succeeded" &&
+            event.object?.metadata &&
+            event.object.id
+          ) {
+            const meta = event.object.metadata;
+            const maxUserId = Number(meta.max_user_id);
+            const plan = meta.plan ?? "";
+            if (Number.isFinite(maxUserId) && maxUserId > 0 && isProPlanId(plan)) {
+              try {
+                const { expiresAt, alreadyProcessed } = await activatePro(
+                  maxUserId,
+                  plan,
+                  "yookassa",
+                  event.object.id,
+                );
+                if (!alreadyProcessed) {
+                  await notifyProActivated(maxUserId, expiresAt).catch((err) =>
+                    console.error("Notify user after YooKassa:", err),
+                  );
+                }
+              } catch (err) {
+                console.error("YooKassa activatePro:", err);
+              }
+            }
           }
           res.writeHead(200);
           res.end();
@@ -151,6 +206,8 @@ export function listenHttp(): void {
   const server = createHttpServer();
   const bind = process.env.HTTP_BIND ?? "0.0.0.0";
   server.listen(config.httpPort, bind, () => {
-    console.log(`HTTP ${bind}:${config.httpPort} (Mini App, /webhooks/max, /api/me)`);
+    console.log(
+      `HTTP ${bind}:${config.httpPort} (Mini App, /webhooks/max, /webhooks/yookassa, /pay/*, /api/me)`,
+    );
   });
 }
