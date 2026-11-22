@@ -1,12 +1,12 @@
 import { redeemPromoCode } from "../db/promo.js";
 import { dbEnabled } from "../db/pool.js";
 import { isProActive } from "../db/users.js";
-import { sendMessage, type MaxInlineButton } from "../max/client.js";
+import { sendMessage, type MaxInlineButton, type MessageTarget } from "../max/client.js";
 import { allMenuLabels, strings, type AppLanguage } from "./i18n.js";
-import { mainMenuKeyboard } from "./keyboard.js";
 import { clearPromoAwait, isPromoAwait, setPromoAwait } from "./chatSession.js";
 
 export const PROMO_ENTER_PAYLOAD = "sutra:promo:enter";
+export const PROMO_CANCEL_PAYLOAD = "sutra:promo:cancel";
 
 const MENU_LABELS = allMenuLabels();
 
@@ -29,32 +29,40 @@ export function proPromoButtons(lang: AppLanguage): MaxInlineButton[][] {
   return [[{ type: "callback", text: t.promoButton, payload: PROMO_ENTER_PAYLOAD }]];
 }
 
-export async function handlePromoCallback(userId: number, lang: AppLanguage): Promise<void> {
+function promoStepBackRow(lang: AppLanguage): MaxInlineButton[][] {
+  return [[{ type: "callback", text: strings(lang).btnBack, payload: PROMO_CANCEL_PAYLOAD }]];
+}
+
+export async function handlePromoCallback(target: MessageTarget, lang: AppLanguage): Promise<void> {
+  const userId = target.userId;
+  if (userId == null) return;
   if (!dbEnabled()) {
     await sendMessage({
-      userId,
+      ...target,
       text: strings(lang).promoDbRequired,
-      buttons: await mainMenuKeyboard(lang, userId),
+      buttons: promoStepBackRow(lang),
     });
     return;
   }
   if (await isProActive(userId)) {
-    await sendMessage({
-      userId,
-      text: strings(lang).promoAlreadyPro,
-      buttons: await mainMenuKeyboard(lang, userId),
-    });
+    const { showProInfo } = await import("./billingFlow.js");
+    await showProInfo(target, lang);
     return;
   }
   setPromoAwait(userId, true);
   await sendMessage({
-    userId,
+    ...target,
     text: strings(lang).promoPrompt,
-    buttons: [[{ type: "callback", text: strings(lang).btnBack, payload: "sutra:promo:cancel" }]],
+    buttons: promoStepBackRow(lang),
   });
 }
 
-export async function tryHandlePromoMessage(userId: number, text: string, lang: AppLanguage): Promise<boolean> {
+export async function tryHandlePromoMessage(
+  userId: number,
+  text: string,
+  lang: AppLanguage,
+  target?: MessageTarget,
+): Promise<boolean> {
   if (!isPromoAwait(userId)) return false;
 
   const trimmed = text.trim();
@@ -70,19 +78,22 @@ export async function tryHandlePromoMessage(userId: number, text: string, lang: 
 
   clearPromoAwait(userId);
   const result = await redeemPromoCode(userId, trimmed);
+  const deliver: MessageTarget = target ?? { userId };
+
+  if (result.ok) {
+    const { showProInfo } = await import("./billingFlow.js");
+    await showProInfo(deliver, lang);
+    return true;
+  }
+
   await sendMessage({
-    userId,
+    ...deliver,
     text: promoResultMessage(lang, result),
-    buttons: await mainMenuKeyboard(lang, userId),
+    buttons: promoStepBackRow(lang),
   });
   return true;
 }
 
-export async function cancelPromoDialog(userId: number, lang: AppLanguage): Promise<void> {
+export function clearPromoAwaitForUser(userId: number): void {
   clearPromoAwait(userId);
-  await sendMessage({
-    userId,
-    text: strings(lang).menuRestored,
-    buttons: await mainMenuKeyboard(lang, userId),
-  });
 }

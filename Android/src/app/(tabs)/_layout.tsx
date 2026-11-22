@@ -55,6 +55,7 @@ export default function TabLayout() {
       />
       <Tabs.Screen name="directories" options={{ title: text.directories, headerShown: false }} />
     </Tabs>
+  );
 }
 
 function tabIcon(routeName: string): keyof typeof MaterialCommunityIcons.glyphMap {
@@ -72,8 +73,10 @@ function HeaderLink({ href, label }: { href: Href; label: string }) {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1 },
+  iconWrap: {
+    alignItems: 'center',
     borderRadius: 16,
+    justifyContent: 'center',
     minWidth: 72,
     paddingHorizontal: 16,
     paddingVertical: 4,

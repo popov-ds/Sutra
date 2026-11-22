@@ -14,6 +14,33 @@ const SDK_VERSION = '11.2.0';
 const YANDEX_MOBILE_ADS_VERSION = '8.7.0';
 const RUSTORE_MAVEN = 'https://nexus-external.rustore.ru/repository/maven-rustore-exposed';
 const YANDEX_ADS_MAVEN = 'https://ads.maven.yandex.net/';
+const PLUGIN_DIR = __dirname;
+
+function yandexAdsJavaDir(projectRoot) {
+  return path.join(
+    projectRoot,
+    'android',
+    'app',
+    'src',
+    'main',
+    'java',
+    'com',
+    'popov_ds',
+    'sutra',
+    'ads',
+  );
+}
+
+function copyYandexNativeSources(projectRoot) {
+  const srcDir = path.join(PLUGIN_DIR, 'native-src', 'ads');
+  const destDir = yandexAdsJavaDir(projectRoot);
+  fs.mkdirSync(destDir, { recursive: true });
+  for (const file of ['YandexAdsPackage.kt', 'YandexBannerViewManager.kt']) {
+    const from = path.join(srcDir, file);
+    if (!fs.existsSync(from)) continue;
+    fs.copyFileSync(from, path.join(destDir, file));
+  }
+}
 function ensureMavenRepo(contents) {
   if (contents.includes('maven-rustore-exposed')) return contents;
   return contents.replace(
@@ -175,15 +202,38 @@ function patchMainApplication(projectRoot) {
   if (!fs.existsSync(ktPath)) return;
 
   let src = fs.readFileSync(ktPath, 'utf8');
+
+  if (!src.includes('com.yandex.mobile.ads.common.MobileAds')) {
+    src = src.replace(
+      /^(import .+\n)(?=class )/m,
+      '$1import com.popov_ds.sutra.ads.YandexAdsPackage\nimport com.yandex.mobile.ads.common.MobileAds\n',
+    );
+  }
+
+  if (!src.includes('YandexAdsPackage()')) {
+    src = src.replace(
+      /(val packages = PackageList\(this\)\.packages[^\n]*\n)/,
+      '$1            packages.add(YandexAdsPackage())\n',
+    );
+  }
+
+  if (!src.includes('MobileAds.initialize')) {
+    src = src.replace(/\bsuper\.onCreate\(\)/, 'super.onCreate()\n    MobileAds.initialize(this) {}');
+  }
+
   if (!src.includes('RuStoreReactPayPackage')) {
-    src = src.replace(
-      'import com.popov_ds.sutra.ads.YandexAdsPackage',
-      'import com.popov_ds.sutra.ads.YandexAdsPackage\nimport ru.rustore.react.pay.RuStoreReactPayPackage',
-    );
-    src = src.replace(
-      'add(YandexAdsPackage())',
-      'add(YandexAdsPackage())\n          add(RuStoreReactPayPackage())',
-    );
+    if (src.includes('import com.popov_ds.sutra.ads.YandexAdsPackage')) {
+      src = src.replace(
+        'import com.popov_ds.sutra.ads.YandexAdsPackage',
+        'import com.popov_ds.sutra.ads.YandexAdsPackage\nimport ru.rustore.react.pay.RuStoreReactPayPackage',
+      );
+    }
+    if (src.includes('packages.add(YandexAdsPackage())')) {
+      src = src.replace(
+        'packages.add(YandexAdsPackage())',
+        'packages.add(YandexAdsPackage())\n            packages.add(RuStoreReactPayPackage())',
+      );
+    }
   }
   fs.writeFileSync(ktPath, src);
 }
@@ -240,6 +290,7 @@ function withRuStoreNativeRegistration(config) {
   return withDangerousMod(config, [
     'android',
     (mod) => {
+      copyYandexNativeSources(mod.modRequest.projectRoot);
       patchMainApplication(mod.modRequest.projectRoot);
       patchMainActivity(mod.modRequest.projectRoot);
       return mod;

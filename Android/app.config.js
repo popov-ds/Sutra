@@ -9,7 +9,11 @@ const rsyaBannerUnitIdByChannel = {
 };
 
 const useDevTierTools = process.env.EXPO_PUBLIC_DEV_TIER_TOOLS === '1';
-const rsyaBannerUnitId = rsyaBannerUnitIdByChannel[distributionChannel];
+/** debug APK / EXPO_PUBLIC_RSYA_USE_DEMO — стабильный demo-banner-yandex для проверки SDK */
+const rsyaBannerUnitId =
+  process.env.EXPO_PUBLIC_RSYA_USE_DEMO === '1' || useDevTierTools
+    ? 'demo-banner-yandex'
+    : rsyaBannerUnitIdByChannel[distributionChannel];
 const rustoreProProductIds = (
   process.env.EXPO_PUBLIC_RUSTORE_PRO_PRODUCT_IDS ?? 'pro_year,pro_month'
 )

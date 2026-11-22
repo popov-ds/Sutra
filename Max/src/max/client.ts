@@ -8,13 +8,25 @@ export type MaxInlineButton =
   | { type: "callback"; text: string; payload: string }
   | { type: "message"; text: string };
 
-export type SendMessageParams = {
+export type MessageTarget = {
   userId?: number;
   chatId?: number;
+};
+
+export type SendMessageParams = MessageTarget & {
   text: string;
   buttons?: MaxInlineButton[][];
   format?: "markdown" | "html";
 };
+
+function inlineKeyboardInResponse(response: unknown): boolean {
+  const r = response as {
+    body?: { attachments?: { type?: string }[] };
+    message?: { body?: { attachments?: { type?: string }[] } };
+  };
+  const attachments = r.message?.body?.attachments ?? r.body?.attachments;
+  return Array.isArray(attachments) && attachments.some((a) => a?.type === "inline_keyboard");
+}
 
 export async function maxApi<T>(
   method: string,
@@ -45,7 +57,7 @@ export async function maxApi<T>(
   return text ? (JSON.parse(text) as T) : (undefined as T);
 }
 
-export async function sendMessage(params: SendMessageParams): Promise<void> {
+async function postMessage(params: SendMessageParams): Promise<void> {
   const query: Record<string, string | number | undefined> = {};
   if (params.userId) query.user_id = params.userId;
   if (params.chatId) query.chat_id = params.chatId;
@@ -60,16 +72,62 @@ export async function sendMessage(params: SendMessageParams): Promise<void> {
         ]
       : undefined;
 
-  await maxApi("POST", "/messages", query, {
+  const res = await maxApi<unknown>("POST", "/messages", query, {
     text: params.text,
     format: params.format,
     attachments,
   });
+
+  if (attachments && !inlineKeyboardInResponse(res)) {
+    console.warn("MAX POST /messages: в ответе нет inline_keyboard (сообщение уже отправлено)");
+  }
+}
+
+export async function sendMessage(params: SendMessageParams): Promise<void> {
+  await postMessage(params);
+}
+
+/** Одна доставка за раз: иначе chat_id и user_id дают два одинаковых сообщения в диалоге. */
+function deliveryAttempts(target: MessageTarget): MessageTarget[] {
+  const attempts: MessageTarget[] = [];
+  if (target.userId != null) attempts.push({ userId: target.userId });
+  if (target.chatId != null) attempts.push({ chatId: target.chatId });
+  return attempts;
+}
+
+/** Отправить сообщение с клавиатурой; при ошибке API — другой id, затем упрощённая клавиатура. */
+export async function sendMessageWithMenu(
+  target: MessageTarget,
+  text: string,
+  keyboards: MaxInlineButton[][][],
+  options?: { format?: "markdown" | "html" },
+): Promise<void> {
+  let lastErr: unknown;
+  for (const buttons of keyboards) {
+    for (const attempt of deliveryAttempts(target)) {
+      try {
+        await sendMessage({ ...attempt, text, buttons, format: options?.format });
+        return;
+      } catch (err) {
+        lastErr = err;
+        console.error("sendMessageWithMenu:", err);
+      }
+    }
+  }
+  throw lastErr instanceof Error ? lastErr : new Error("Не удалось отправить меню с кнопками");
 }
 
 export type MaxUpdate = {
   update_type?: string;
   timestamp?: number;
+  chat_id?: number;
+  user_locale?: string;
+  payload?: string;
+  user?: {
+    user_id?: number;
+    name?: string;
+    is_bot?: boolean;
+  };
   message?: {
     body?: { text?: string };
     sender?: { user_id?: number; name?: string; is_bot?: boolean };
@@ -81,6 +139,11 @@ export type MaxUpdate = {
     user?: { user_id?: number };
   };
 };
+
+export function chatIdFromUpdate(update: MaxUpdate): number | undefined {
+  const id = update.chat_id ?? update.message?.recipient?.chat_id;
+  return id != null && Number.isFinite(id) ? id : undefined;
+}
 
 /** Подтверждение нажатия inline-кнопки (обязательно для MAX message_callback). */
 export async function answerCallback(callbackId: string): Promise<void> {

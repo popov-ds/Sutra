@@ -13,7 +13,7 @@ import { useStrings } from '@/i18n/LanguageProvider';
 import { translateError } from '@/i18n/text';
 import { CatalogPickerModal } from '@/ui/catalog/CatalogPickerModal';
 import { CatalogSelectField } from '@/ui/catalog/CatalogSelectField';
-import { SCREEN_FOOTER_SCROLL_PAD, ScreenFooter } from '@/ui/ScreenFooter';
+import { ScreenFooter, useScreenFooterScrollPad } from '@/ui/ScreenFooter';
 import { theme } from '@/ui/theme';
 import { Button, Field, Notice, SectionTitle, TaskCard } from '@/ui/ui';
 import { useLoader } from '@/ui/useLoader';
@@ -29,6 +29,7 @@ type Draft = {
 export default function ClientCardScreen() {
   const db = useSQLiteContext();
   const text = useStrings();
+  const scrollPad = useScreenFooterScrollPad();
   const params = useLocalSearchParams<{ id: string | string[] }>();
   const clientId = Array.isArray(params.id) ? params.id[0] : params.id;
   const { data, error, loading } = useLoader(clientId ?? '', () => {
@@ -105,7 +106,10 @@ export default function ClientCardScreen() {
   return (
     <>
       <View style={styles.root}>
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <ScrollView
+          contentContainerStyle={[styles.content, { paddingBottom: scrollPad }]}
+          keyboardShouldPersistTaps="handled"
+        >
           <Stack.Screen options={{ title: draft?.name || data?.client.name || text.client }} />
           {error ? <Text style={styles.error}>{error}</Text> : null}
           {loading && !draft ? <ActivityIndicator color={theme.service} /> : null}
@@ -243,7 +247,7 @@ function toDraft(client: Client): Draft {
 
 const styles = StyleSheet.create({
   root: { backgroundColor: theme.bg, flex: 1 },
-  content: { gap: 16, padding: 16, paddingBottom: SCREEN_FOOTER_SCROLL_PAD },
+  content: { gap: 16, padding: 16 },
   block: { gap: 10 },
   label: { color: theme.muted, fontSize: 13, fontWeight: '600' },
   statuses: { gap: 8 },

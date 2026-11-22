@@ -1,5 +1,5 @@
 import { useSQLiteContext } from 'expo-sqlite';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
 
 import {
@@ -55,13 +55,16 @@ export function ClientRequestCatalog({
     setNotice(null);
   }, []);
 
+  const onPickerSelectedIdChangeRef = useRef(onPickerSelectedIdChange);
+  onPickerSelectedIdChangeRef.current = onPickerSelectedIdChange;
+
   const startAdd = useCallback(() => {
-    onPickerSelectedIdChange?.(null);
+    onPickerSelectedIdChangeRef.current?.(null);
     setMode('add');
     setEditingId(null);
     setName('');
     setNotice(null);
-  }, [onPickerSelectedIdChange]);
+  }, []);
 
   useEffect(() => {
     if (addRequestTick === 0) return;

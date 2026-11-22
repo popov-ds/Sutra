@@ -7,13 +7,14 @@ import { createClient } from '@/data/clients';
 import { CLIENT_STATUSES, type ClientStatus } from '@/domain/types';
 import { useStrings } from '@/i18n/LanguageProvider';
 import { translateError } from '@/i18n/text';
-import { SCREEN_FOOTER_SCROLL_PAD, ScreenFooter } from '@/ui/ScreenFooter';
+import { ScreenFooter, useScreenFooterScrollPad } from '@/ui/ScreenFooter';
 import { theme } from '@/ui/theme';
 import { Button, Field, Notice } from '@/ui/ui';
 
 export default function NewClientScreen() {
   const db = useSQLiteContext();
   const text = useStrings();
+  const scrollPad = useScreenFooterScrollPad();
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [status, setStatus] = useState<ClientStatus>('newbie');
@@ -38,7 +39,10 @@ export default function NewClientScreen() {
 
   return (
     <View style={styles.root}>
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        contentContainerStyle={[styles.content, { paddingBottom: scrollPad }]}
+        keyboardShouldPersistTaps="handled"
+      >
         <Stack.Screen options={{ title: text.newClient }} />
         <Field label={text.name} value={name} onChangeText={setName} placeholder="Анна" />
         <Field label={text.phone} value={phone} onChangeText={setPhone} placeholder="+7 900 000-00-00" keyboardType="phone-pad" />
@@ -76,7 +80,7 @@ export default function NewClientScreen() {
 
 const styles = StyleSheet.create({
   root: { backgroundColor: theme.bg, flex: 1 },
-  content: { gap: 16, padding: 16, paddingBottom: SCREEN_FOOTER_SCROLL_PAD },
+  content: { gap: 16, padding: 16 },
   field: { gap: 8 },
   label: { color: theme.muted, fontSize: 13, fontWeight: '600' },
   tags: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },

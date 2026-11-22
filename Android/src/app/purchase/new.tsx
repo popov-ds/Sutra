@@ -13,7 +13,7 @@ import { useLanguage } from '@/i18n/LanguageProvider';
 import { translateError, visibleTask } from '@/i18n/text';
 import { CatalogPickerModal } from '@/ui/catalog/CatalogPickerModal';
 import { CatalogSelectField } from '@/ui/catalog/CatalogSelectField';
-import { SCREEN_FOOTER_SCROLL_PAD, ScreenFooter } from '@/ui/ScreenFooter';
+import { ScreenFooter, useScreenFooterScrollPad } from '@/ui/ScreenFooter';
 import { categoryColor, theme } from '@/ui/theme';
 import { Button, DatePickerField, Notice } from '@/ui/ui';
 import { useLoader } from '@/ui/useLoader';
@@ -23,6 +23,7 @@ export default function NewPurchaseScreen() {
   const params = useLocalSearchParams<{ clientId?: string | string[] }>();
   const clientId = Array.isArray(params.clientId) ? params.clientId[0] : params.clientId;
   const { language, text } = useLanguage();
+  const scrollPad = useScreenFooterScrollPad();
 
   const { data, error, loading } = useLoader(clientId ? `purchase-new-${clientId}` : 'purchase-new-missing', async () => {
     if (!clientId) throw new Error(text.missingClient);
@@ -93,7 +94,10 @@ export default function NewPurchaseScreen() {
   return (
     <>
       <View style={styles.root}>
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <ScrollView
+          contentContainerStyle={[styles.content, { paddingBottom: scrollPad }]}
+          keyboardShouldPersistTaps="handled"
+        >
           <Stack.Screen options={{ title: text.newPurchase }} />
           {error ? <Text style={styles.error}>{error}</Text> : null}
           {loading && !data ? <ActivityIndicator color={theme.service} /> : null}
@@ -168,7 +172,7 @@ function TouchPreviewCard({
 
 const styles = StyleSheet.create({
   root: { backgroundColor: theme.bg, flex: 1 },
-  content: { gap: 12, padding: 16, paddingBottom: SCREEN_FOOTER_SCROLL_PAD },
+  content: { gap: 12, padding: 16 },
   contentPlain: { gap: 12, padding: 16, paddingBottom: 40 },
   label: { color: theme.muted, fontSize: 13, fontWeight: '600' },
   block: { gap: 10 },

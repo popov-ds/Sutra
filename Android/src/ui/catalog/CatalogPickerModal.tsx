@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { BannerLayoutProvider } from '@/ads/BannerLayoutProvider';
 import { FreeTierBannerDock } from '@/ads/FreeTierBannerDock';
 import { useStrings } from '@/i18n/LanguageProvider';
 import { Button } from '@/ui/ui';
@@ -41,6 +42,7 @@ export function CatalogPickerModal({
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
       <SafeAreaView style={styles.safe} edges={['top']}>
+        <BannerLayoutProvider>
         <View style={styles.header}>
           <Pressable accessibilityRole="button" accessibilityLabel={text.back} onPress={onClose} hitSlop={8}>
             <MaterialCommunityIcons name="close" size={26} color={theme.ink} />
@@ -93,6 +95,7 @@ export function CatalogPickerModal({
           )}
         </View>
         <FreeTierBannerDock />
+        </BannerLayoutProvider>
       </SafeAreaView>
     </Modal>
   );

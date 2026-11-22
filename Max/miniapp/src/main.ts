@@ -86,15 +86,14 @@ function setNavHighlight(): void {
   });
 }
 
-function setupProCloudTab(profile: MeResponse): void {
+function syncCloudTabVisibility(profile: MeResponse): void {
   const cloudTab = document.querySelector<HTMLElement>('[data-primary="cloud"]');
   if (!cloudTab) return;
-  if (profile.tier === "pro") {
-    cloudTab.hidden = false;
-  } else {
-    cloudTab.hidden = true;
-    if (primary === "cloud") primary = "today";
-  }
+  const show = profile.tier === "pro";
+  cloudTab.hidden = !show;
+  cloudTab.toggleAttribute("aria-hidden", !show);
+  cloudTab.disabled = !show;
+  if (!show && primary === "cloud") primary = "today";
 }
 
 function applyLocale(lang: AppLanguage): void {
@@ -122,13 +121,17 @@ async function syncProfileFromServer(): Promise<void> {
   const tierChanged = next.tier !== prev.tier;
   me = next;
   if (langChanged) applyLocale(me.language);
-  if (tierChanged) setupProCloudTab(me);
+  if (tierChanged) syncCloudTabVisibility(me);
   refreshProSyncContext();
   if (langChanged || tierChanged) await renderScreen();
 }
 
 async function renderScreen(): Promise<void> {
   setNavHighlight();
+
+  if (primary === "cloud" && me.tier !== "pro") {
+    primary = "today";
+  }
 
   if (primary === "today") {
     await renderTodayView(
@@ -219,6 +222,11 @@ async function showPrimary(tab: PrimaryTab): Promise<void> {
   if (tab === "directories") dirView = "home";
   if (tab === "clients") clientsRoute = "list";
   if (tab === "cloud") {
+    if (me.tier !== "pro") {
+      primary = "today";
+      await renderScreen();
+      return;
+    }
     await refreshCloudSession(me, (email) => {
       cloudUi = { ...cloudUi, signedInEmail: email };
       refreshProSyncContext();
@@ -233,7 +241,7 @@ async function main(): Promise<void> {
 
   me = await fetchMe();
   applyLocale(me.language);
-  setupProCloudTab(me);
+  syncCloudTabVisibility(me);
   await getLocalDb();
   void reportLocalClientCount();
 
@@ -248,7 +256,7 @@ async function main(): Promise<void> {
   document.querySelectorAll("[data-primary]").forEach((btn) => {
     btn.addEventListener("click", () => {
       const tab = (btn as HTMLElement).dataset.primary as PrimaryTab;
-      if (tab === "cloud" && (btn as HTMLElement).hidden) return;
+      if (tab === "cloud" && (me.tier !== "pro" || (btn as HTMLElement).hidden)) return;
       void showPrimary(tab);
     });
   });

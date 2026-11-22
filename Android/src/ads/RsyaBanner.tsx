@@ -1,5 +1,5 @@
 import Constants from 'expo-constants';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
   PixelRatio,
   Platform,
@@ -86,10 +86,6 @@ function RsyaBannerNative({
 }) {
   const [slotHeight, setSlotHeight] = useState(DEFAULT_SLOT_HEIGHT);
 
-  useEffect(() => {
-    onSlotHeightDp?.(bannerDockHeightDp(DEFAULT_SLOT_HEIGHT));
-  }, [onSlotHeightDp]);
-
   const onAdLoaded = useCallback(
     (event: NativeSyntheticEvent<RsyaAdEvent>) => {
       const { heightPx } = event.nativeEvent;
@@ -105,12 +101,12 @@ function RsyaBannerNative({
   if (!BannerView) return null;
 
   return (
-    <View style={styles.wrap}>
+    <View style={styles.wrap} collapsable={false}>
       <BannerView
         adUnitId={adUnitId}
         collapsable={false}
         onAdLoaded={onAdLoaded}
-        style={[styles.banner, { height: slotHeight }]}
+        style={[styles.banner, { height: slotHeight, minHeight: DEFAULT_SLOT_HEIGHT }]}
       />
     </View>
   );

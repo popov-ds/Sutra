@@ -360,6 +360,10 @@ input.input--placeholder-muted::placeholder {
   font-size: 0.9rem;
 }
 
+.tab[hidden] {
+  display: none !important;
+}
+
 .tab {
   flex: 1;
   display: flex;

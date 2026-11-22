@@ -33,6 +33,11 @@ async function main(): Promise<void> {
     console.warn("PUBLIC_BASE_URL без https — Mini App из MAX не откроется.");
   }
 
+  if (config.usePolling && config.webhookSecret) {
+    console.warn(
+      "MAX_USE_POLLING=1 и WEBHOOK_SECRET заданы — один апдейт может обработаться дважды (webhook + polling). Поставьте MAX_USE_POLLING=0 на VPS с webhook.",
+    );
+  }
   if (config.usePolling) {
     await runPolling();
   } else {

@@ -80,6 +80,7 @@ Nginx: `deploy/vps/nginx-sutra.max.master-solver.conf.example` — **отдел�
 В `.env` на VPS: `YOOKASSA_SHOP_ID`, `YOOKASSA_SECRET_KEY`, `PRO_MONTH_RUB`, `PRO_YEAR_RUB` (формат `299.00`).
 
 - Уведомления: `https://sutra.max.master-solver.ru/webhooks/yookassa` (проксируется тем же `location /`, что Mini App)
+- **Один shopId с Yoga:** `https://payment.master-solver.ru/webhooks/yookassa` (hub: `YogaSheduler/Telegram/deploy/vps/yookassa-webhook-hub`).
 - Return URL создаётся API: `/pay/return`
 - После деплоя: в боте «💎 Pro» → «Оформить Pro» → тестовый платёж → «📊 Тариф» должен показать Pro
 

@@ -5,7 +5,9 @@ import { theme } from '@/ui/theme';
 
 const FOOTER_PAD = 72;
 
-export const SCREEN_FOOTER_SCROLL_PAD = FOOTER_PAD + 16;
+export function useScreenFooterScrollPad(extra = 16): number {
+  return FOOTER_PAD + extra;
+}
 
 export function ScreenFooter({ children }: { children: ReactNode }) {
   return <View style={styles.footer}>{children}</View>;

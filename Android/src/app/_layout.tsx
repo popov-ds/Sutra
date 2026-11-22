@@ -4,11 +4,12 @@ import { StatusBar } from 'expo-status-bar';
 import { Component, Suspense, type ReactNode } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
-import { FreeTierBannerDock } from '@/ads/FreeTierBannerDock';
 import { initializeDatabase } from '@/db/initialize';
 import { systemLanguage } from '@/i18n/language';
 import { LanguageProvider, useStrings } from '@/i18n/LanguageProvider';
 import { textOf } from '@/i18n/text';
+import { BannerLayoutProvider } from '@/ads/BannerLayoutProvider';
+import { FreeTierBannerDock } from '@/ads/FreeTierBannerDock';
 import { MorningDigestSync } from '@/notifications/MorningDigestSync';
 import { SubscriptionProvider } from '@/subscription/SubscriptionProvider';
 import { ProSync } from '@/sync/ProSync';
@@ -22,15 +23,28 @@ export default function RootLayout() {
         <SQLiteProvider databaseName="partner-crm.db" onInit={initializeDatabase} useSuspense>
           <LanguageProvider>
             <SubscriptionProvider>
-              <StatusBar style="dark" />
-              <MorningDigestSync />
-              <ProSync />
-              <AppStack />
+              <BannerLayoutProvider>
+                <StatusBar style="dark" />
+                <MorningDigestSync />
+                <ProSync />
+                <AppChrome />
+              </BannerLayoutProvider>
             </SubscriptionProvider>
           </LanguageProvider>
         </SQLiteProvider>
       </Suspense>
     </DatabaseBoundary>
+  );
+}
+
+function AppChrome() {
+  return (
+    <View style={styles.appRoot}>
+      <View style={styles.appStack}>
+        <AppStack />
+      </View>
+      <FreeTierBannerDock />
+    </View>
   );
 }
 
@@ -81,6 +95,8 @@ class DatabaseBoundary extends Component<{ children: ReactNode }, { message: str
 }
 
 const styles = StyleSheet.create({
+  appRoot: { flex: 1 },
+  appStack: { flex: 1 },
   center: {
     alignItems: 'center',
     backgroundColor: theme.bg,
