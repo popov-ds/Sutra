@@ -2,7 +2,6 @@ import { maxApi } from "../max/client.js";
 
 const COMMANDS = [
   { name: "start", description: "Главное меню" },
-  { name: "help", description: "Справка по боту" },
   { name: "tariff", description: "Тариф и лимиты" },
   { name: "settings", description: "Настройки" },
   { name: "pro", description: "Подписка Pro" },

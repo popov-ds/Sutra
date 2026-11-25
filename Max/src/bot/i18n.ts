@@ -67,7 +67,7 @@ const copy = {
     btnTariff: "📊 Тариф",
     btnPro: "💎 Pro",
     btnSettings: "⚙️ Настройки",
-    btnHelp: "❓ Помощь",
+    btnSupport: "💬 Поддержка",
     tariffFree: (n: number) =>
       `Тариф: Free\nДо ${n} клиентов и до ${n} позиций в каждом справочнике (продукты, запросы).\nБез облачной синхронизации.`,
     tariffPro: "Тариф: Pro\nБез лимитов, синхронизация Supabase.",
@@ -91,10 +91,6 @@ const copy = {
     promoDbRequired: "Промокоды доступны только с Postgres (DATABASE_URL на сервере).",
     tariffProActive: (until: string) =>
       `Тариф: Pro\nАктивна до ${until}.\nОблако — иконка ☁️ внизу CRM (Mini App).`,
-    help:
-      "**Моя Sutra** — CRM в Mini App.\n" +
-      "Кнопки **Тариф / Pro / Настройки / Помощь** — ответы в этом чате.\n" +
-      "Облачная синхронизация (Pro) — вкладка ☁️ внизу Mini App.",
     unknown: "Выберите действие кнопками в меню ниже.",
     miniAppMissing:
       "Mini App не настроен: задайте PUBLIC_BASE_URL=https://… в .env и укажите URL в кабинете MAX.",
@@ -155,7 +151,7 @@ const copy = {
     btnTariff: "📊 Plan",
     btnPro: "💎 Pro",
     btnSettings: "⚙️ Settings",
-    btnHelp: "❓ Help",
+    btnSupport: "💬 Support",
     tariffFree: (n: number) =>
       `Plan: Free\nUp to ${n} clients and ${n} items per catalog (products, client requests).\nNo cloud sync.`,
     tariffPro: "Plan: Pro\nNo limits; Supabase sync.",
@@ -179,8 +175,6 @@ const copy = {
     promoDbRequired: "Promo codes require Postgres (DATABASE_URL on the server).",
     tariffProActive: (until: string) =>
       `Plan: Pro\nActive until ${until}.\nCloud — ☁️ tab at the bottom of the CRM Mini App.`,
-    help:
-      "**My Sutra** — CRM Mini App.\nPlan, Pro, Settings, Help — in this chat.\nCloud sync (Pro) — ☁️ tab at the bottom of the Mini App.",
     unknown: "Use the buttons below the input.",
     miniAppMissing: "Set PUBLIC_BASE_URL=https://… in .env and register in MAX.",
   },
@@ -195,7 +189,6 @@ export const MENU_PAYLOADS = {
   tariff: "menu:tariff",
   pro: "menu:pro",
   settings: "menu:settings",
-  help: "menu:help",
 } as const;
 
 const MENU_BUTTON_KEYS = ["btnTariff", "btnPro", "btnSettings"] as const;
@@ -222,7 +215,6 @@ export function actionForMenuText(text: string): keyof typeof MENU_PAYLOADS | nu
     if (trimmed === normalizeMenuLabel(t.btnTariff)) return "tariff";
     if (trimmed === normalizeMenuLabel(t.btnPro)) return "pro";
     if (trimmed === normalizeMenuLabel(t.btnSettings)) return "settings";
-    if (trimmed === t.btnHelp) return "help";
     if (trimmed === t.btnSutra) return "today";
   }
   return null;

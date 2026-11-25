@@ -38,7 +38,9 @@
     "experiments": {
       "typedRoutes": true
     },
-    "extra": {}
+    "extra": {
+      "supportBaseUrl": "https://support.master-solver.ru"
+    }
   }
 }
 	

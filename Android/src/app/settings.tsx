@@ -1,5 +1,6 @@
 import { Stack } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
@@ -17,6 +18,7 @@ import { translateError } from '@/i18n/text';
 import { useSubscription } from '@/subscription/SubscriptionProvider';
 import { theme } from '@/ui/theme';
 import { ProPlanPickerModal } from '@/ui/billing/ProPlanPickerModal';
+import { ProCloudSyncWarningModal } from '@/ui/ProCloudSyncWarningModal';
 import { Button, Notice } from '@/ui/ui';
 
 const LANGUAGES: AppLanguage[] = ['ru', 'en'];
@@ -35,6 +37,7 @@ export default function SettingsScreen() {
   const [purchaseBusy, setPurchaseBusy] = useState(false);
   const [proPickerOpen, setProPickerOpen] = useState(false);
   const [proPickerNotice, setProPickerNotice] = useState<string | null>(null);
+  const [cloudWarnOpen, setCloudWarnOpen] = useState(false);
   const cloudEnabled = isSupabaseConfigured();
   const devTools = showDevTierTools();
   const freeAdsLine = isPlayBuild() ? text.freeFeatureAdsPlay : text.freeFeatureAds;
@@ -50,6 +53,15 @@ export default function SettingsScreen() {
   }, [cloudEnabled]);
 
   const activeSignedInEmail = cloudEnabled ? signedInEmail : null;
+  const cloudSyncMissing = isPro && !activeSignedInEmail;
+
+  useEffect(() => {
+    if (!cloudSyncMissing) {
+      setCloudWarnOpen(false);
+      return;
+    }
+    setCloudWarnOpen(true);
+  }, [cloudSyncMissing]);
 
   const sendOtp = async () => {
     setAuthBusy(true);
@@ -222,7 +234,16 @@ export default function SettingsScreen() {
 
       {isPro && cloudEnabled ? (
         <>
-          <Text style={styles.section}>{text.syncAccountTitle}</Text>
+          <View style={styles.cloudSectionHead}>
+            <View style={[styles.cloudIconWrap, cloudSyncMissing && styles.cloudIconWrapWarn]}>
+              <MaterialCommunityIcons
+                name="cloud-outline"
+                size={28}
+                color={cloudSyncMissing ? theme.danger : theme.service}
+              />
+            </View>
+            <Text style={styles.section}>{text.syncAccountTitle}</Text>
+          </View>
           <View style={styles.planCard}>
             <Text style={styles.hint}>{text.syncAccountHint}</Text>
             {activeSignedInEmail ? (
@@ -270,6 +291,13 @@ export default function SettingsScreen() {
       {devTools ? <Text style={styles.devNote}>DEV: tier = {tier}</Text> : null}
     </ScrollView>
 
+    <ProCloudSyncWarningModal
+      closeLabel={text.dialogClose}
+      message={text.proCloudSyncWarning}
+      onClose={() => setCloudWarnOpen(false)}
+      visible={cloudWarnOpen}
+    />
+
     <ProPlanPickerModal
       busy={purchaseBusy}
       notice={proPickerNotice}
@@ -289,6 +317,16 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   content: { gap: 10, padding: 16, paddingBottom: 40 },
   section: { color: theme.ink, fontSize: 18, fontWeight: '700', marginTop: 4 },
+  cloudSectionHead: { alignItems: 'center', flexDirection: 'row', gap: 10, marginTop: 4 },
+  cloudIconWrap: {
+    alignItems: 'center',
+    borderColor: theme.line,
+    borderRadius: 12,
+    borderWidth: 2,
+    justifyContent: 'center',
+    padding: 6,
+  },
+  cloudIconWrapWarn: { borderColor: theme.danger },
   planCard: {
     backgroundColor: theme.card,
     borderColor: theme.line,

@@ -1,9 +1,10 @@
 import { config, miniAppConfigured } from "../config.js";
 import type { MaxInlineButton } from "../max/client.js";
 import { MENU_PAYLOADS, strings, type AppLanguage } from "./i18n.js";
+import { supportConfigured, supportFormUrl } from "./supportLink.js";
 
 /** Inline-меню: до 2 кнопок в ряду (рекомендация MAX по длине текста). */
-export function mainMenuKeyboard(lang: AppLanguage, _maxUserId: number): MaxInlineButton[][] {
+export function mainMenuKeyboard(lang: AppLanguage, maxUserId: number): MaxInlineButton[][] {
   const t = strings(lang);
   const rows: MaxInlineButton[][] = [];
 
@@ -19,30 +20,39 @@ export function mainMenuKeyboard(lang: AppLanguage, _maxUserId: number): MaxInli
     ]);
   }
 
+  const rowSupport: MaxInlineButton[] = [
+    { type: "callback", text: t.btnSettings, payload: MENU_PAYLOADS.settings },
+  ];
+  if (supportConfigured()) {
+    rowSupport.push({ type: "link", text: t.btnSupport, url: supportFormUrl(maxUserId, lang) });
+  }
+
   rows.push(
     [
       { type: "callback", text: t.btnTariff, payload: MENU_PAYLOADS.tariff },
-      { type: "callback", text: t.btnSettings, payload: MENU_PAYLOADS.settings },
-    ],
-    [
       { type: "callback", text: t.btnPro, payload: MENU_PAYLOADS.pro },
-      { type: "callback", text: t.btnHelp, payload: MENU_PAYLOADS.help },
     ],
+    rowSupport,
   );
+
   return rows;
 }
 
 /** Только callback — если link/open_app ломают клавиатуру в API. */
-export function mainMenuKeyboardCallbacksOnly(lang: AppLanguage): MaxInlineButton[][] {
+export function mainMenuKeyboardCallbacksOnly(lang: AppLanguage, maxUserId: number): MaxInlineButton[][] {
   const t = strings(lang);
+  const rowSupport: MaxInlineButton[] = [
+    { type: "callback", text: t.btnSettings, payload: MENU_PAYLOADS.settings },
+  ];
+  if (supportConfigured()) {
+    rowSupport.push({ type: "link", text: t.btnSupport, url: supportFormUrl(maxUserId, lang) });
+  }
+
   return [
     [
       { type: "callback", text: t.btnTariff, payload: MENU_PAYLOADS.tariff },
-      { type: "callback", text: t.btnSettings, payload: MENU_PAYLOADS.settings },
-    ],
-    [
       { type: "callback", text: t.btnPro, payload: MENU_PAYLOADS.pro },
-      { type: "callback", text: t.btnHelp, payload: MENU_PAYLOADS.help },
     ],
+    rowSupport,
   ];
 }

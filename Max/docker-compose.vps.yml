@@ -10,14 +10,14 @@ services:
     environment:
       POSTGRES_USER: sutra
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sutra}
-      POSTGRES_DB: sutra_bot
+      POSTGRES_DB: sutra_max_bot
     ports:
       - "127.0.0.1:55433:5432"
     volumes:
       - sutramax_pgdata:/var/lib/postgresql/data
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U sutra -d sutra_bot"]
+      test: ["CMD-SHELL", "pg_isready -U sutra -d sutra_max_bot"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -32,7 +32,7 @@ services:
       HTTP_PORT: 18081
       HTTP_BIND: 127.0.0.1
       DATA_DIR: /data
-      DATABASE_URL: postgresql://sutra:${POSTGRES_PASSWORD:-sutra}@127.0.0.1:55433/sutra_bot
+      DATABASE_URL: postgresql://sutra:${POSTGRES_PASSWORD:-sutra}@127.0.0.1:55433/sutra_max_bot
       PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-https://sutra.max.master-solver.ru}
       MAX_USE_POLLING: ${MAX_USE_POLLING:-1}
     volumes:

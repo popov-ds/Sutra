@@ -6,6 +6,7 @@ import { registerBotCommands } from "./bot/commands.js";
 import { listenHttp } from "./http/server.js";
 import { maxApi } from "./max/client.js";
 import { runPolling } from "./bot/poll.js";
+import { dispatchPendingNotifications } from "./services/notificationDispatch.js";
 
 async function main(): Promise<void> {
   assertBotReady();
@@ -25,6 +26,14 @@ async function main(): Promise<void> {
     console.log("MAX bot commands registered");
   } catch (err) {
     console.warn("MAX /me или commands:", err);
+  }
+
+  if (dbEnabled()) {
+    try {
+      await dispatchPendingNotifications();
+    } catch (err) {
+      console.error("notifications dispatch:", err);
+    }
   }
 
   if (miniAppConfigured()) {

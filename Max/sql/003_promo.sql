@@ -7,12 +7,30 @@ CREATE TABLE IF NOT EXISTS promo_codes (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE TABLE IF NOT EXISTS promo_redemptions (
-  id BIGSERIAL PRIMARY KEY,
-  max_user_id BIGINT NOT NULL REFERENCES bot_users (max_user_id) ON DELETE CASCADE,
-  code TEXT NOT NULL REFERENCES promo_codes (code) ON DELETE CASCADE,
-  redeemed_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  UNIQUE (max_user_id, code)
-);
+DO $promo_redemptions$
+BEGIN
+  IF to_regclass('public.promo_redemptions') IS NOT NULL THEN
+    RETURN;
+  END IF;
+
+  IF to_regclass('public.users') IS NOT NULL AND to_regclass('public.bot_users') IS NULL THEN
+    CREATE TABLE promo_redemptions (
+      id BIGSERIAL PRIMARY KEY,
+      user_id BIGINT NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+      code TEXT NOT NULL REFERENCES promo_codes (code) ON DELETE CASCADE,
+      redeemed_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      UNIQUE (user_id, code)
+    );
+  ELSIF to_regclass('public.bot_users') IS NOT NULL THEN
+    CREATE TABLE promo_redemptions (
+      id BIGSERIAL PRIMARY KEY,
+      max_user_id BIGINT NOT NULL REFERENCES bot_users (max_user_id) ON DELETE CASCADE,
+      code TEXT NOT NULL REFERENCES promo_codes (code) ON DELETE CASCADE,
+      redeemed_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      UNIQUE (max_user_id, code)
+    );
+  END IF;
+END
+$promo_redemptions$;
 
 CREATE INDEX IF NOT EXISTS idx_promo_redemptions_code ON promo_redemptions (code);

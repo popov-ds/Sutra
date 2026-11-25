@@ -426,6 +426,30 @@ input.input--placeholder-muted::placeholder {
   color: var(--service);
 }
 
+.tab[data-primary="cloud"].tab--cloud-warn .tab-icon {
+  color: #b3261e;
+  outline: 2px solid #b3261e;
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+.confirm-panel--alert .confirm-message--warn {
+  color: #b3261e;
+  font-weight: 600;
+  text-align: center;
+  margin: 8px 0 16px;
+  line-height: 1.45;
+}
+
+.confirm-actions--single {
+  justify-content: center;
+}
+
+.confirm-actions--single .primary {
+  flex: 0 1 auto;
+  min-width: 140px;
+}
+
 .day-pager {
   display: flex;
   align-items: center;

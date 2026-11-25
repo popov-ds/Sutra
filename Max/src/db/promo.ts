@@ -38,10 +38,11 @@ export async function redeemPromoCode(maxUserId: number, rawCode: string): Promi
   );
   if ((def.rowCount ?? 0) === 0) return { ok: false, reason: "unknown" };
 
-  const used = await pool.query(`SELECT 1 FROM promo_redemptions WHERE max_user_id = $1 AND code = $2`, [
-    maxUserId,
-    code,
-  ]);
+  const used = await pool.query(
+    `SELECT 1 FROM promo_redemptions
+     WHERE user_id = (SELECT id FROM users WHERE max_user_id = $1) AND code = $2`,
+    [maxUserId, code],
+  );
   if ((used.rowCount ?? 0) > 0) return { ok: false, reason: "used" };
 
   const { days, max_uses: maxUses } = def.rows[0]!;
@@ -59,7 +60,11 @@ export async function redeemPromoCode(maxUserId: number, rawCode: string): Promi
     await client.query("BEGIN");
     await ensureBotUser(maxUserId, "ru", client);
     const { expiresAt } = await grantProDays(maxUserId, days, "promo", externalId, client);
-    await client.query(`INSERT INTO promo_redemptions (max_user_id, code) VALUES ($1, $2)`, [maxUserId, code]);
+    await client.query(
+      `INSERT INTO promo_redemptions (user_id, code)
+       VALUES ((SELECT id FROM users WHERE max_user_id = $1), $2)`,
+      [maxUserId, code],
+    );
     await client.query("COMMIT");
     return { ok: true, expiresAt, days };
   } catch (err) {

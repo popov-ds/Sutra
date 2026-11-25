@@ -11,6 +11,10 @@ import {
 import { setAppLanguage } from "./localeContext.js";
 import { type AppLanguage, strings, type UiStrings } from "./i18n.js";
 import { deferRenderUntilBlur } from "./ui/editingGuard.js";
+import {
+  showProCloudSyncWarningIfNeeded,
+  updateCloudTabWarningStyle,
+} from "./ui/proCloudSyncWarning.js";
 import { initMaxWebApp } from "./maxBridge.js";
 import { reportLocalClientCount } from "./reportLocalStats.js";
 import { configureProSync } from "./sync/proSync.js";
@@ -73,6 +77,7 @@ function patchCloudUi(patch: Partial<typeof cloudUi>): void {
   cloudUi = { ...cloudUi, ...patch };
   if (patch.signedInEmail !== undefined && patch.signedInEmail !== prevSignedIn) {
     refreshProSyncContext();
+    updateCloudTabWarningStyle(me, cloudUi.signedInEmail);
   }
   if (primary !== "cloud") return;
   const run = () => void renderScreen();
@@ -94,6 +99,7 @@ function syncCloudTabVisibility(profile: MeResponse): void {
   cloudTab.toggleAttribute("aria-hidden", !show);
   cloudTab.disabled = !show;
   if (!show && primary === "cloud") primary = "today";
+  updateCloudTabWarningStyle(profile, cloudUi.signedInEmail);
 }
 
 function applyLocale(lang: AppLanguage): void {
@@ -122,6 +128,7 @@ async function syncProfileFromServer(): Promise<void> {
   me = next;
   if (langChanged) applyLocale(me.language);
   if (tierChanged) syncCloudTabVisibility(me);
+  else updateCloudTabWarningStyle(me, cloudUi.signedInEmail);
   refreshProSyncContext();
   if (langChanged || tierChanged) await renderScreen();
 }
@@ -262,9 +269,17 @@ async function main(): Promise<void> {
   });
 
   await renderScreen();
+  updateCloudTabWarningStyle(me, cloudUi.signedInEmail);
+  await showProCloudSyncWarningIfNeeded(t, me, cloudUi.signedInEmail);
 
   document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "visible") void syncProfileFromServer().catch(() => {});
+    if (document.visibilityState !== "visible") return;
+    void syncProfileFromServer()
+      .then(async () => {
+        updateCloudTabWarningStyle(me, cloudUi.signedInEmail);
+        await showProCloudSyncWarningIfNeeded(t, me, cloudUi.signedInEmail);
+      })
+      .catch(() => {});
   });
 }
 

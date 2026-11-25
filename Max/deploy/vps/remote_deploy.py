@@ -139,7 +139,7 @@ LAUNCH_TOKEN_SECRET={launch_secret}
 EXPO_PUBLIC_SUPABASE_URL={supabase_url}
 EXPO_PUBLIC_SUPABASE_ANON_KEY={supabase_anon}
 POSTGRES_PASSWORD={pg_pass}
-DATABASE_URL=postgresql://sutra:{pg_pass}@127.0.0.1:55433/sutra_bot
+DATABASE_URL=postgresql://sutra:{pg_pass}@127.0.0.1:55433/sutra_max_bot
 PROMO_CODES={promo_codes}
 """
     sftp = c.open_sftp()

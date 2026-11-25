@@ -1,6 +1,7 @@
 import { fetchMe } from "./api.js";
 import { strings } from "./i18n.js";
 import { bindCloudNativeBack, closeMaxWebApp, isOpenedInsideMax } from "./maxBridge.js";
+import { showProCloudSyncWarningIfNeeded } from "./ui/proCloudSyncWarning.js";
 import { refreshCloudSession, renderCloudView } from "./views/cloudView.js";
 
 /** Экран облака внутри index.html (без редиректа — не блокирует CRM). */
@@ -36,4 +37,5 @@ export async function mountCloudApp(screen: HTMLElement): Promise<void> {
   }
 
   await render();
+  await showProCloudSyncWarningIfNeeded(t, me, cloudUi.signedInEmail);
 }

@@ -144,6 +144,9 @@ export type AppText = {
   syncSignOut: string;
   syncSignedIn: (email: string) => string;
   syncCodeSent: string;
+  proCloudSyncWarning: string;
+  dialogClose: string;
+  supportContact: string;
   enableProDev: string;
   downgradeFreeDev: string;
   adPlaceholder: string;
@@ -299,6 +302,10 @@ const RU: AppText = {
   syncSignOut: 'Выйти из облака',
   syncSignedIn: (email) => `В облаке: ${email}`,
   syncCodeSent: 'Код отправлен. Проверьте почту.',
+  proCloudSyncWarning:
+    'Внимание! У вас активен тариф Pro, но не подключена облачная синхронизация. Получите доступ к облаку и обеспечьте сохранность данных.',
+  dialogClose: 'Закрыть',
+  supportContact: 'Поддержка',
   enableProDev: 'DEV: включить Pro',
   downgradeFreeDev: 'DEV: вернуть Free',
   adPlaceholder: 'Реклама РСЯ',
@@ -512,6 +519,10 @@ const EN: AppText = {
   syncSignOut: 'Sign out',
   syncSignedIn: (email) => `Signed in: ${email}`,
   syncCodeSent: 'Code sent. Check your inbox.',
+  proCloudSyncWarning:
+    'Attention! You have an active Pro plan, but cloud sync is not connected. Sign in to the cloud to keep your data safe.',
+  dialogClose: 'Close',
+  supportContact: 'Support',
   enableProDev: 'DEV: enable Pro',
   downgradeFreeDev: 'DEV: switch to Free',
   adPlaceholder: 'RSYA ad',

@@ -33,6 +33,7 @@ ROOT = Path(__file__).resolve().parent
 
 PATHS = (
     "src",
+    "sql",
     "miniapp",
     "deploy",
     "package.json",
@@ -160,6 +161,23 @@ def main() -> None:
             break
         run(client, "sleep 3", timeout=10)
     print(f"health: {health or '(нет ответа)'}")
+
+    _code, schema_ok, _err = run_soft(
+        client,
+        f"{compose_prefix()} exec -T postgres psql -U sutra -d sutra_max_bot -tAc "
+        "\"SELECT CASE WHEN to_regclass('public.users') IS NOT NULL "
+        "AND to_regclass('public.settings') IS NOT NULL THEN 'ok' ELSE 'legacy' END\"",
+        timeout=60,
+    )
+    schema_ok = schema_ok.strip()
+    print(f"db schema: {schema_ok or '(не удалось проверить)'}")
+    if schema_ok == "legacy":
+        print(
+            "База всё ещё со старой схемой (нет users/settings). "
+            "Пересоберите образ без кэша и перезапустите бота:\n"
+            f"  {compose_prefix()} build --no-cache bot && {compose_prefix()} up -d\n"
+            "Логи миграции: docker compose ... logs bot --tail=100"
+        )
 
     if health != "ok":
         run(client, f"{compose_prefix()} ps -a", timeout=60)

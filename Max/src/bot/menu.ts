@@ -100,11 +100,9 @@ async function handleAction(
   let text: string = t.unknown;
   if (action === "tariff") {
     text = await tariffMessage(maxUserId, lang);
-  } else if (action === "help") {
-    text = t.help;
   }
 
-  await replyWithMenu(target, text, lang, { markdown: action === "help" });
+  await replyWithMenu(target, text, lang);
 }
 
 export async function handleUpdate(update: MaxUpdate): Promise<void> {
@@ -118,7 +116,7 @@ export async function handleUpdate(update: MaxUpdate): Promise<void> {
     } catch (err) {
       console.error("bot_started:", err);
       const lang = localeLanguage(update.user_locale) ?? "ru";
-      await sendMessageWithMenu(target, strings(lang).welcome, [mainMenuKeyboardCallbacksOnly(lang)]).catch((e) =>
+      await sendMessageWithMenu(target, strings(lang).welcome, [mainMenuKeyboardCallbacksOnly(lang, target.userId!)]).catch((e) =>
         console.error("bot_started fallback:", e),
       );
     }
@@ -155,7 +153,7 @@ export async function handleUpdate(update: MaxUpdate): Promise<void> {
       console.error("callback handler:", callbackPayload, err);
       const lang = await langFor(maxUserId);
       await sendMessageWithMenu(target, strings(lang).botTempError, [
-        mainMenuKeyboardCallbacksOnly(lang),
+        mainMenuKeyboardCallbacksOnly(lang, maxUserId),
         mainMenuKeyboard(lang, maxUserId),
       ]);
     }
@@ -176,9 +174,8 @@ export async function handleUpdate(update: MaxUpdate): Promise<void> {
     await sendWelcome(target);
     return;
   }
-  if (textLower === "/help" || textLower === "/tariff" || textLower === "/settings" || textLower === "/pro") {
+  if (textLower === "/tariff" || textLower === "/settings" || textLower === "/pro") {
     const map: Record<string, keyof typeof MENU_PAYLOADS> = {
-      "/help": "help",
       "/tariff": "tariff",
       "/settings": "settings",
       "/pro": "pro",

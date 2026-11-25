@@ -21,7 +21,7 @@ export async function sendBotMenu(
   await sendMessageWithMenu(
     target,
     text,
-    [mainMenuKeyboardCallbacksOnly(lang), full],
+    [mainMenuKeyboardCallbacksOnly(lang, uid), full],
     { format: options?.markdown ? "markdown" : undefined },
   );
 }

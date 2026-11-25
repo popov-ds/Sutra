@@ -6,6 +6,8 @@ import { ensureBotUser } from "./users.js";
 
 export type SubscriptionProvider = "promo" | "manual" | "yookassa" | "rustore";
 
+const userIdByMaxSql = `(SELECT id FROM users WHERE max_user_id = $1)`;
+
 export async function activatePro(
   maxUserId: number,
   plan: ProPlanId,
@@ -15,14 +17,14 @@ export async function activatePro(
   const pool = getPool();
   if (externalPaymentId) {
     const dup = await pool.query(
-      `SELECT id FROM bot_subscriptions
+      `SELECT id FROM subscriptions
        WHERE provider = $1 AND external_payment_id = $2`,
       [provider, externalPaymentId],
     );
     if ((dup.rowCount ?? 0) > 0) {
       const active = await pool.query<{ e: Date }>(
-        `SELECT MAX(expires_at) AS e FROM bot_subscriptions
-         WHERE max_user_id = $1 AND expires_at > now()`,
+        `SELECT MAX(expires_at) AS e FROM subscriptions
+         WHERE user_id = ${userIdByMaxSql} AND expires_at > now()`,
         [maxUserId],
       );
       return {
@@ -38,8 +40,8 @@ export async function activatePro(
     await client.query("BEGIN");
     await ensureBotUser(maxUserId, "ru", client);
     const cur = await client.query<{ e: Date | null }>(
-      `SELECT MAX(expires_at) AS e FROM bot_subscriptions
-       WHERE max_user_id = $1 AND expires_at > now()`,
+      `SELECT MAX(expires_at) AS e FROM subscriptions
+       WHERE user_id = ${userIdByMaxSql} AND expires_at > now()`,
       [maxUserId],
     );
     const now = new Date();
@@ -47,8 +49,8 @@ export async function activatePro(
       cur.rows[0]?.e && new Date(cur.rows[0].e) > now ? new Date(cur.rows[0].e) : now;
     const expiresAt = new Date(base.getTime() + days * 86400000);
     await client.query(
-      `INSERT INTO bot_subscriptions (max_user_id, plan, provider, external_payment_id, expires_at)
-       VALUES ($1, 'pro', $2, $3, $4)`,
+      `INSERT INTO subscriptions (user_id, plan, provider, external_payment_id, expires_at)
+       VALUES (${userIdByMaxSql}, 'pro', $2, $3, $4)`,
       [maxUserId, provider, externalPaymentId, expiresAt.toISOString()],
     );
     await client.query("COMMIT");
@@ -76,8 +78,8 @@ export async function grantProDays(
     if (own) await client.query("BEGIN");
     await ensureBotUser(maxUserId, "ru", client);
     const cur = await client.query<{ e: Date | null }>(
-      `SELECT MAX(expires_at) AS e FROM bot_subscriptions
-       WHERE max_user_id = $1 AND expires_at > now()`,
+      `SELECT MAX(expires_at) AS e FROM subscriptions
+       WHERE user_id = ${userIdByMaxSql} AND expires_at > now()`,
       [maxUserId],
     );
     const now = new Date();
@@ -85,8 +87,8 @@ export async function grantProDays(
       cur.rows[0]?.e && new Date(cur.rows[0].e) > now ? new Date(cur.rows[0].e) : now;
     const expiresAt = new Date(base.getTime() + days * 86400000);
     await client.query(
-      `INSERT INTO bot_subscriptions (max_user_id, plan, provider, external_payment_id, expires_at)
-       VALUES ($1, 'pro', $2, $3, $4)`,
+      `INSERT INTO subscriptions (user_id, plan, provider, external_payment_id, expires_at)
+       VALUES (${userIdByMaxSql}, 'pro', $2, $3, $4)`,
       [maxUserId, provider, externalPaymentId, expiresAt.toISOString()],
     );
     if (own) await client.query("COMMIT");

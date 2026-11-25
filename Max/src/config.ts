@@ -7,11 +7,21 @@ function required(name: string, value: string | undefined): string {
   return v;
 }
 
+/** Публичный URL формы: SUPPORT_PUBLIC_URL или PUBLIC_BASE_URL/support. */
+function resolveSupportPublicUrl(): string {
+  const direct = process.env.SUPPORT_PUBLIC_URL?.trim() ?? "";
+  if (direct) return direct.replace(/\/$/, "");
+  const base = (process.env.PUBLIC_BASE_URL ?? "").trim().replace(/\/$/, "");
+  if (base.startsWith("https://")) return `${base}/support`;
+  return "";
+}
+
 export const config = {
   maxBotToken: process.env.MAX_BOT_TOKEN?.trim() ?? "",
   /** Публичное имя бота в MAX для open_app (не URL). */
   maxBotWebApp: process.env.MAX_BOT_WEB_APP?.trim() ?? "",
   publicBaseUrl: (process.env.PUBLIC_BASE_URL ?? "").trim().replace(/\/$/, ""),
+  supportPublicUrl: resolveSupportPublicUrl(),
   httpPort: Number(process.env.HTTP_PORT ?? "8090"),
   webhookSecret: process.env.WEBHOOK_SECRET?.trim() ?? "",
   usePolling: (process.env.MAX_USE_POLLING ?? "1").trim() === "1",

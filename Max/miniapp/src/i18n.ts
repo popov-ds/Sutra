@@ -270,6 +270,9 @@ function buildCatalog(lang: AppLanguage) {
     openFromMax: isEn ? "Open the app from the MAX bot chat" : "Откройте приложение из чата с ботом MAX",
     profileFailed: isEn ? "Could not load profile" : "Не удалось получить профиль",
     navSections: isEn ? "CRM sections" : "Разделы CRM",
+    proCloudSyncWarning: isEn
+      ? "Attention! You have an active Pro plan, but cloud sync is not connected. Sign in to the cloud to keep your data safe."
+      : "Внимание! У вас активен тариф Pro, но не подключена облачная синхронизация. Получите доступ к облаку и обеспечьте сохранность данных.",
     tabCloud: isEn ? "Cloud" : "Облако",
     errors,
   };
