@@ -193,7 +193,7 @@ def main() -> None:
     print("Готово.")
     print(
         "HTTPS/nginx первый раз: python deploy/vps/setup_sutra_subdomain.py\n"
-        f"Проверка снаружи: https://sutra.max.master-solver.ru/health (или ваш PUBLIC_BASE_URL)"
+        f"Проверка снаружи: https://sutra.max.dreamer-soft.pro/health (или ваш PUBLIC_BASE_URL)"
     )
 
 

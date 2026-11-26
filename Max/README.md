@@ -33,7 +33,7 @@ npm start
 
 ## VPS
 
-Каталог **`/opt/SutraMaxBot`**, порт **`127.0.0.1:18081`**, поддомен по умолчанию `sutra.max.master-solver.ru`. Подробно: [docs/deploy-adminvps.md](docs/deploy-adminvps.md).
+Каталог **`/opt/SutraMaxBot`**, порт **`127.0.0.1:18081`**, поддомен по умолчанию `sutra.max.dreamer-soft.pro`. Подробно: [docs/deploy-adminvps.md](docs/deploy-adminvps.md).
 
 ## Структура
 
@@ -48,3 +48,8 @@ miniapp/        — SPA: локальная SQLite + sync Supabase
 **ЮKassa (Pro):** `YOOKASSA_SHOP_ID`, `YOOKASSA_SECRET_KEY`, `PRO_MONTH_RUB`, `PRO_YEAR_RUB`; webhook `POST …/webhooks/yookassa`; оплата из чата — кнопка в «💎 Pro», страницы `/pay/start`, `/pay/return`.
 
 Дальнейшие шаги: initData MAX для подписи launch (когда подключите валидацию из Bridge).
+
+## Restart бота на VPS
+
+cd /opt/SutraMaxBot
+docker compose -f docker-compose.vps.yml restart bot

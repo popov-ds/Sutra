@@ -11,6 +11,7 @@ import {
 import { setAppLanguage } from "./localeContext.js";
 import { type AppLanguage, strings, type UiStrings } from "./i18n.js";
 import { deferRenderUntilBlur } from "./ui/editingGuard.js";
+import { setScreenLoading } from "./ui/loadingScreen.js";
 import {
   showProCloudSyncWarningIfNeeded,
   updateCloudTabWarningStyle,
@@ -134,6 +135,7 @@ async function syncProfileFromServer(): Promise<void> {
 }
 
 async function renderScreen(): Promise<void> {
+  screen.classList.remove("screen--loading");
   setNavHighlight();
 
   if (primary === "cloud" && me.tier !== "pro") {
@@ -244,7 +246,7 @@ async function showPrimary(tab: PrimaryTab): Promise<void> {
 
 async function main(): Promise<void> {
   initMaxWebApp();
-  screen.textContent = strings("ru").loading;
+  setScreenLoading(screen, "ru");
 
   me = await fetchMe();
   applyLocale(me.language);
@@ -284,5 +286,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((err) => {
+  screen.classList.remove("screen--loading");
   screen.innerHTML = `<p class="muted">${strings("ru").cloudError(err)}</p>`;
 });

@@ -38,4 +38,4 @@ echo ""
 docker compose -f "${COMPOSE_FILE}" ps
 echo ""
 echo "Проверка: curl -sS http://127.0.0.1:18081/health"
-echo "Nginx: deploy/vps/nginx-sutra.max.master-solver.conf.example"
+echo "Nginx: deploy/vps/nginx-sutra.max.dreamer-soft.conf.example"

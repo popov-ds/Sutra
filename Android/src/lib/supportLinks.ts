@@ -2,7 +2,7 @@ import Constants from 'expo-constants';
 
 import type { AppLanguage } from '@/i18n/language';
 
-const DEFAULT_SUPPORT_BASE = 'https://support.master-solver.ru';
+const DEFAULT_SUPPORT_BASE = 'https://support.dreamer-soft.pro';
 
 export function supportBaseUrl(): string {
   const fromExtra = Constants.expoConfig?.extra?.supportBaseUrl;

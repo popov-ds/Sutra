@@ -13,6 +13,7 @@
     "db:migrate": "tsx src/db/migrate.ts"
   },
   "dependencies": {
+    "@fontsource/material-symbols-outlined": "^5.3.9",
     "@supabase/supabase-js": "^2.119.0",
     "dotenv": "^16.4.7",
     "pg": "^8.16.3",

@@ -16,7 +16,7 @@ USER = os.environ.get("SUTRAMAX_SSH_USER", "root")
 PASS = os.environ.get("SUTRAMAX_SSH_PASS") or os.environ.get("SSH_PASS", "")
 REMOTE = "/opt/SutraMaxBot"
 PUBLIC_BASE = os.environ.get(
-    "SUTRAMAX_PUBLIC_BASE", "https://sutra.max.master-solver.ru"
+    "SUTRAMAX_PUBLIC_BASE", "https://sutra.max.dreamer-soft.pro"
 )
 
 MAX_ROOT = Path(__file__).resolve().parents[2]

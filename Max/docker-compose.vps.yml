@@ -33,7 +33,7 @@ services:
       HTTP_BIND: 127.0.0.1
       DATA_DIR: /data
       DATABASE_URL: postgresql://sutra:${POSTGRES_PASSWORD:-sutra}@127.0.0.1:55433/sutra_max_bot
-      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-https://sutra.max.master-solver.ru}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-https://sutra.max.dreamer-soft.pro}
       MAX_USE_POLLING: ${MAX_USE_POLLING:-1}
     volumes:
       - sutramax_data:/data

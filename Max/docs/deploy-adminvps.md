@@ -62,13 +62,21 @@ curl -sS http://127.0.0.1:18081/health
 
 ## 3. HTTPS
 
-DNS: **`sutra.max.master-solver.ru`** → `168.113.171.219` (или свой поддомен → `SUTRAMAX_DOMAIN`).
+DNS (reg.ru, зона **`dreamer-soft.pro`**): **A** `sutra.max` → `168.113.171.219` (или свой поддомен → `SUTRAMAX_DOMAIN`).
 
 ```env
-PUBLIC_BASE_URL=https://sutra.max.master-solver.ru
+PUBLIC_BASE_URL=https://sutra.max.dreamer-soft.pro
 ```
 
-Nginx: `deploy/vps/nginx-sutra.max.master-solver.conf.example` — **отдельный** `server_name`, не `master-solver.ru`.
+Nginx: `deploy/vps/nginx-sutra.max.dreamer-soft.conf.example` — **отдельный** `server_name` (не vhost solver).
+
+HTTPS с Windows:
+
+```powershell
+cd D:\Partners\Projects\Sutra\Max
+$env:SUTRAMAX_SSH_PASS = "..."
+python deploy\vps\setup_sutra_subdomain.py
+```
 
 ## 4. MAX
 
@@ -79,8 +87,8 @@ Nginx: `deploy/vps/nginx-sutra.max.master-solver.conf.example` — **отдел�
 
 В `.env` на VPS: `YOOKASSA_SHOP_ID`, `YOOKASSA_SECRET_KEY`, `PRO_MONTH_RUB`, `PRO_YEAR_RUB` (формат `299.00`).
 
-- Уведомления: `https://sutra.max.master-solver.ru/webhooks/yookassa` (проксируется тем же `location /`, что Mini App)
-- **Один shopId с Yoga:** `https://payment.master-solver.ru/webhooks/yookassa` (hub: `YogaSheduler/Telegram/deploy/vps/yookassa-webhook-hub`).
+- Уведомления бота: `https://sutra.max.dreamer-soft.pro/webhooks/yookassa` (проксируется тем же `location /`, что Mini App)
+- **Один shopId с Yoga:** `https://payment.dreamer-soft.pro/webhooks/yookassa` (hub: `DreamerSoft/YookassaPaymentHub`).
 - Return URL создаётся API: `/pay/return`
 - После деплоя: в боте «💎 Pro» → «Оформить Pro» → тестовый платёж → «📊 Тариф» должен показать Pro
 
