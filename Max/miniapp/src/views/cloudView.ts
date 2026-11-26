@@ -2,6 +2,7 @@ import type { MeResponse } from "../api.js";
 import { closeMaxWebApp, isOpenedInsideMax } from "../maxBridge.js";
 import type { UiStrings } from "../i18n.js";
 import { setScreenChrome, splitLayout } from "../ui/screenChrome.js";
+import { reportCloudLinkToBot } from "../reportCloudLink.js";
 import {
   getSupabase,
   runCloudSync,
@@ -137,6 +138,7 @@ export async function renderCloudView(
         try {
           const { data } = await verifyEmailOtp(supabase, email, code);
           const signed = data.user?.email ?? email;
+          void reportCloudLinkToBot(supabase);
           onState({ busy: false, signedInEmail: signed, notice: null });
         } catch (err) {
           onState({
@@ -155,6 +157,7 @@ export async function renderCloudView(
       onState({ busy: true, notice: null });
       try {
         const result = await runCloudSync(supabase);
+        void reportCloudLinkToBot(supabase);
         onState({ busy: false, notice: t.cloudSyncOk(result) });
       } catch (err) {
         onState({
@@ -171,6 +174,7 @@ export async function renderCloudView(
       onState({ busy: true, notice: null });
       try {
         await supabase.auth.signOut();
+        void reportCloudLinkToBot(supabase);
         onState({ busy: false, signedInEmail: null, code: "", notice: t.cloudSignedOut });
       } catch (err) {
         onState({
@@ -194,6 +198,7 @@ export async function refreshCloudSession(
   const supabase = getSupabase(me.supabaseUrl, me.supabaseAnonKey);
   const { data } = await supabase.auth.getSession();
   onSignedIn(data.session?.user.email ?? null);
+  if (data.session?.user.id) void reportCloudLinkToBot(supabase);
 }
 
 function escapeHtml(s: string): string {

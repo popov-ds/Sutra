@@ -30,5 +30,9 @@ export function FreeTierBannerDock() {
 }
 
 const styles = StyleSheet.create({
-  dock: { width: '100%' },
+  dock: {
+    flexShrink: 0,
+    marginTop: 0,
+    width: '100%',
+  },
 });

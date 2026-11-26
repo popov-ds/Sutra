@@ -69,8 +69,8 @@ const copy = {
     btnSettings: "⚙️ Настройки",
     btnSupport: "💬 Поддержка",
     tariffFree: (n: number) =>
-      `Тариф: Free\nДо ${n} клиентов и до ${n} позиций в каждом справочнике (продукты, запросы).\nБез облачной синхронизации.`,
-    tariffPro: "Тариф: Pro\nБез лимитов, синхронизация Supabase.",
+      `Тариф: Free\nДо ${n} клиентов и до ${n} позиций в каждом справочнике (продукты, запросы).\nБез облачной синхронизации.\nБез утренних уведомлений о касаниях.`,
+    tariffPro: "Тариф: Pro\nБез лимитов, синхронизация Supabase.\nУтренний план касаний в 9:00 — в приложении и в чате MAX (после входа в облако в Mini App).",
     settings: "Настройки\nЯзык чата: русский.\nCRM — в Mini App «Моя Sutra».",
     proOfferLead: "Pro — без лимитов и с синхронизацией Supabase.",
     proOfferMonth: (rub: string, days: number) => `• Месяц: ${rub} ₽ (${days} дн.)`,
@@ -90,7 +90,7 @@ const copy = {
     promoAlreadyPro: "Pro уже активен. См. «📊 Тариф».",
     promoDbRequired: "Промокоды доступны только с Postgres (DATABASE_URL на сервере).",
     tariffProActive: (until: string) =>
-      `Тариф: Pro\nАктивна до ${until}.\nОблако — иконка ☁️ внизу CRM (Mini App).`,
+      `Тариф: Pro\nАктивна до ${until}.\nОблако — иконка ☁️ внизу CRM (Mini App).\nУтренний дайджест касаний в 9:00 в чат MAX — после входа в облако и синхронизации.`,
     unknown: "Выберите действие кнопками в меню ниже.",
     miniAppMissing:
       "Mini App не настроен: задайте PUBLIC_BASE_URL=https://… в .env и укажите URL в кабинете MAX.",
@@ -153,8 +153,8 @@ const copy = {
     btnSettings: "⚙️ Settings",
     btnSupport: "💬 Support",
     tariffFree: (n: number) =>
-      `Plan: Free\nUp to ${n} clients and ${n} items per catalog (products, client requests).\nNo cloud sync.`,
-    tariffPro: "Plan: Pro\nNo limits; Supabase sync.",
+      `Plan: Free\nUp to ${n} clients and ${n} items per catalog (products, client requests).\nNo cloud sync.\nNo morning touch reminders.`,
+    tariffPro: "Plan: Pro\nNo limits; Supabase sync.\nMorning touch plan at 9:00 — in the app and MAX chat (after cloud sign-in in the Mini App).",
     settings: "Settings\nChat language: English.\nCRM — My Sutra Mini App.",
     proOfferLead: "Pro — no limits and Supabase sync.",
     proOfferMonth: (rub: string, days: number) => `• Month: ${rub} ₽ (${days} days)`,
@@ -174,7 +174,7 @@ const copy = {
     promoAlreadyPro: "Pro is already active.",
     promoDbRequired: "Promo codes require Postgres (DATABASE_URL on the server).",
     tariffProActive: (until: string) =>
-      `Plan: Pro\nActive until ${until}.\nCloud — ☁️ tab at the bottom of the CRM Mini App.`,
+      `Plan: Pro\nActive until ${until}.\nCloud — ☁️ tab at the bottom of the CRM Mini App.\nMorning touch digest at 9:00 in MAX chat — after cloud sign-in and sync.`,
     unknown: "Use the buttons below the input.",
     miniAppMissing: "Set PUBLIC_BASE_URL=https://… in .env and register in MAX.",
   },

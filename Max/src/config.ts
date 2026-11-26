@@ -28,6 +28,11 @@ export const config = {
   launchTokenSecret: process.env.LAUNCH_TOKEN_SECRET?.trim() ?? "",
   supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL?.trim() ?? "",
   supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY?.trim() ?? "",
+  /** Только на сервере: утренний дайджест касаний из Supabase */
+  supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY?.trim() ?? "",
+  morningDigestEnabled: (process.env.MORNING_DIGEST_ENABLED ?? "1").trim() !== "0",
+  morningDigestTz: (process.env.MORNING_DIGEST_TZ ?? "Europe/Moscow").trim(),
+  morningDigestHour: Math.min(23, Math.max(0, Number(process.env.MORNING_DIGEST_HOUR ?? "9") || 9)),
   dataDir: process.env.DATA_DIR?.trim() || "data",
   databaseUrl: process.env.DATABASE_URL?.trim() ?? "",
   postgresPassword: process.env.POSTGRES_PASSWORD?.trim() ?? "",

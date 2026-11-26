@@ -7,6 +7,7 @@ import { listenHttp } from "./http/server.js";
 import { maxApi } from "./max/client.js";
 import { runPolling } from "./bot/poll.js";
 import { dispatchPendingNotifications } from "./services/notificationDispatch.js";
+import { startMorningDigestScheduler } from "./services/morningDigestScheduler.js";
 
 async function main(): Promise<void> {
   assertBotReady();
@@ -34,6 +35,7 @@ async function main(): Promise<void> {
     } catch (err) {
       console.error("notifications dispatch:", err);
     }
+    startMorningDigestScheduler();
   }
 
   if (miniAppConfigured()) {

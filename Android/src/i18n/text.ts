@@ -109,9 +109,11 @@ export type AppText = {
   freeFeatureAds: string;
   freeFeatureLimit: (limit: number) => string;
   freeFeatureNoSync: string;
+  freeFeatureNoTouchNotifications: string;
   proFeatureNoAds: string;
   proFeatureUnlimited: string;
   proFeatureSync: string;
+  proFeatureTouchNotifications: string;
   upgradePro: string;
   upgradeProMonth: string;
   upgradeProYear: string;
@@ -145,6 +147,7 @@ export type AppText = {
   syncSignedIn: (email: string) => string;
   syncCodeSent: string;
   proCloudSyncWarning: string;
+  proCloudSyncWarnDontShowAgain: string;
   dialogClose: string;
   supportContact: string;
   enableProDev: string;
@@ -257,7 +260,7 @@ const RU: AppText = {
   notificationChannel: 'План касаний',
   notificationsDisabledTitle: 'Уведомления выключены',
   notificationsDisabledBody:
-    'Без них легко пропустить касания по клиентам. Включите уведомления — каждое утро в 9:00 приложение пришлёт локальный план на день: кого позвонить и какие задачи по покупкам.',
+    'На тарифе Pro каждое утро в 9:00 приложение пришлёт план касаний на день (клиенты и задачи по покупкам). То же в чате MAX — после входа в облако в Mini App.',
   notificationsEnable: 'Включить уведомления',
   planTitle: 'Подписка',
   planFreeBadge: 'Бесплатно',
@@ -267,9 +270,12 @@ const RU: AppText = {
   freeFeatureAds: 'Реклама внизу экранов',
   freeFeatureLimit: (limit) => `Не больше ${limit} клиентов и ${limit} записей в «Продуктах» и «Запросах клиента»`,
   freeFeatureNoSync: 'Нет синхронизации в облако',
+  freeFeatureNoTouchNotifications: 'Нет утренних уведомлений о касаниях',
   proFeatureNoAds: 'Без рекламы',
   proFeatureUnlimited: 'Без лимита клиентов и справочников',
   proFeatureSync: 'Синхронизация с Supabase (Pro)',
+  proFeatureTouchNotifications:
+    'Утренние уведомления о касаниях в 9:00 (приложение и чат MAX при облаке)',
   upgradePro: 'Оформить Pro',
   upgradeProMonth: 'Pro — месяц',
   upgradeProYear: 'Pro — год',
@@ -304,6 +310,7 @@ const RU: AppText = {
   syncCodeSent: 'Код отправлен. Проверьте почту.',
   proCloudSyncWarning:
     'Внимание! У вас активен тариф Pro, но не подключена облачная синхронизация. Получите доступ к облаку и обеспечьте сохранность данных.',
+  proCloudSyncWarnDontShowAgain: 'Больше не показывать',
   dialogClose: 'Закрыть',
   supportContact: 'Поддержка',
   enableProDev: 'DEV: включить Pro',
@@ -474,7 +481,7 @@ const EN: AppText = {
   notificationChannel: 'Touch plan',
   notificationsDisabledTitle: 'Notifications are off',
   notificationsDisabledBody:
-    'You may miss client touchpoints. Turn notifications on — every morning at 9:00 the app sends a local plan for the day: who to call and which purchase follow-ups are due.',
+    'On Pro, every morning at 9:00 the app sends your touch plan for the day. The same in MAX chat — after cloud sign-in in the Mini App.',
   notificationsEnable: 'Turn on notifications',
   planTitle: 'Subscription',
   planFreeBadge: 'Free',
@@ -484,9 +491,12 @@ const EN: AppText = {
   freeFeatureAds: 'Ads at the bottom of the screens',
   freeFeatureLimit: (limit) => `At most ${limit} clients and ${limit} entries in Products and Client requests`,
   freeFeatureNoSync: 'No cloud sync',
+  freeFeatureNoTouchNotifications: 'No morning touch reminders',
   proFeatureNoAds: 'No ads',
   proFeatureUnlimited: 'Unlimited clients and directories',
   proFeatureSync: 'Supabase sync (Pro)',
+  proFeatureTouchNotifications:
+    'Morning touch reminders at 9:00 (app and MAX chat when cloud is linked)',
   upgradePro: 'Get Pro',
   upgradeProMonth: 'Pro — monthly',
   upgradeProYear: 'Pro — yearly',
@@ -521,6 +531,7 @@ const EN: AppText = {
   syncCodeSent: 'Code sent. Check your inbox.',
   proCloudSyncWarning:
     'Attention! You have an active Pro plan, but cloud sync is not connected. Sign in to the cloud to keep your data safe.',
+  proCloudSyncWarnDontShowAgain: "Don't show again",
   dialogClose: 'Close',
   supportContact: 'Support',
   enableProDev: 'DEV: enable Pro',

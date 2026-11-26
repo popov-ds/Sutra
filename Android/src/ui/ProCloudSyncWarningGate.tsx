@@ -2,6 +2,7 @@ import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 
 import { loadSession } from '@/data/syncAuth';
+import { isProCloudSyncWarnDismissed, setProCloudSyncWarnDismissed } from '@/data/proCloudSyncWarningPref';
 import { useStrings } from '@/i18n/LanguageProvider';
 import { useSubscription } from '@/subscription/SubscriptionProvider';
 import { ProCloudSyncWarningModal } from '@/ui/ProCloudSyncWarningModal';
@@ -17,8 +18,8 @@ export function ProCloudSyncWarningGate() {
       setVisible(false);
       return;
     }
-    void loadSession().then((session) => {
-      setVisible(!session?.user);
+    void Promise.all([loadSession(), isProCloudSyncWarnDismissed()]).then(([session, dismissed]) => {
+      setVisible(!session?.user && !dismissed);
     });
   }, [isPro]);
 
@@ -28,11 +29,17 @@ export function ProCloudSyncWarningGate() {
     }, [evaluate]),
   );
 
+  const onClose = (dontShowAgain: boolean) => {
+    setVisible(false);
+    if (dontShowAgain) void setProCloudSyncWarnDismissed();
+  };
+
   return (
     <ProCloudSyncWarningModal
       closeLabel={text.dialogClose}
+      dontShowAgainLabel={text.proCloudSyncWarnDontShowAgain}
       message={text.proCloudSyncWarning}
-      onClose={() => setVisible(false)}
+      onClose={onClose}
       visible={visible}
     />
   );

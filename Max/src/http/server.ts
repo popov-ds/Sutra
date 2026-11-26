@@ -6,7 +6,8 @@ import { config } from "../config.js";
 import { getBotUser, upsertBotUser } from "../db/botUsers.js";
 import { dbEnabled } from "../db/pool.js";
 import { activatePro } from "../db/subscriptions.js";
-import { isProActive } from "../db/users.js";
+import { clearCloudLink, isUuid, setCloudLink } from "../db/digest.js";
+import { ensureBotUser, isProActive } from "../db/users.js";
 import { isProPlanId } from "../domain/billingPlans.js";
 import { handleUpdate } from "../bot/menu.js";
 import type { MaxUpdate } from "../max/client.js";
@@ -154,6 +155,51 @@ export function createHttpServer(): http.Server {
           return;
         }
 
+        if (method === "POST" && pathOnly === "/api/me/cloud") {
+          const q = new URL(rawUrl, "http://localhost").searchParams;
+          const maxUserId = resolveMaxUserId(q, initDataHeader(req));
+          if (maxUserId === null) {
+            res.writeHead(401, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: "missing or invalid auth" }));
+            return;
+          }
+          try {
+            if (!(await isProActive(maxUserId))) {
+              res.writeHead(403, { "Content-Type": "application/json" });
+              res.end(JSON.stringify({ error: "pro_required" }));
+              return;
+            }
+            const raw = await readBody(req);
+            const body = JSON.parse(raw) as { supabaseUserId?: unknown; cloudEmail?: unknown };
+            await ensureBotUser(maxUserId);
+            const supabaseUserId =
+              body.supabaseUserId == null || body.supabaseUserId === ""
+                ? null
+                : String(body.supabaseUserId).trim();
+            if (supabaseUserId === null) {
+              await clearCloudLink(maxUserId);
+            } else {
+              if (!isUuid(supabaseUserId)) {
+                res.writeHead(400, { "Content-Type": "application/json" });
+                res.end(JSON.stringify({ error: "invalid_supabase_user_id" }));
+                return;
+              }
+              const cloudEmail =
+                body.cloudEmail == null || body.cloudEmail === ""
+                  ? undefined
+                  : String(body.cloudEmail).trim();
+              await setCloudLink(maxUserId, { supabaseUserId, cloudEmail });
+            }
+            res.writeHead(204);
+            res.end();
+          } catch (err) {
+            console.error("/api/me/cloud:", err);
+            res.writeHead(500, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: "cloud_link_failed" }));
+          }
+          return;
+        }
+
         if (method === "POST" && pathOnly === "/api/local-stats") {
           const q = new URL(rawUrl, "http://localhost").searchParams;
           const maxUserId = resolveMaxUserId(q, initDataHeader(req));
@@ -207,7 +253,7 @@ export function listenHttp(): void {
   const bind = process.env.HTTP_BIND ?? "0.0.0.0";
   server.listen(config.httpPort, bind, () => {
     console.log(
-      `HTTP ${bind}:${config.httpPort} (Mini App, /webhooks/max, /webhooks/yookassa, /pay/*, /api/me)`,
+      `HTTP ${bind}:${config.httpPort} (Mini App, /webhooks/max, /webhooks/yookassa, /pay/*, /api/me, /api/me/cloud)`,
     );
   });
 }

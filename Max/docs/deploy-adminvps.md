@@ -78,6 +78,48 @@ $env:SUTRAMAX_SSH_PASS = "..."
 python deploy\vps\setup_sutra_subdomain.py
 ```
 
+### Чеклист DNS в reg.ru (`sutra.max.dreamer-soft.pro`)
+
+Перед certbot и проверкой Mini App с телефона **без VPN**.
+
+#### reg.ru — зона `dreamer-soft.pro`
+
+- [ ] **Делегирование:** у домена NS → `ns1.reg.ru` / `ns2.reg.ru` (записи правим в reg.ru, не дублируем A в AdminVPS, если NS не на хостере).
+- [ ] **Запись:** тип **A**, имя/хост **`sutra.max`** (не `sutra.max.dreamer-soft.pro` целиком, если панель сама дописывает зону).
+- [ ] **Значение:** публичный IP VPS, сейчас **`168.113.171.219`** (`dig +short sutra.max.dreamer-soft.pro @ns1.reg.ru`).
+- [ ] **Лишнего нет:** нет **CNAME** на тот же хост, нет второй A с другим IP, нет старого **AAAA** (если IPv6 не используете).
+- [ ] **TTL:** на время раската **300–600** с; после стабилизации можно **3600+**.
+- [ ] **Сохранить** запись в панели и подождать TTL (или до 30 мин при коротком TTL).
+
+#### Проверка с ПК (PowerShell / терминал)
+
+- [ ] `nslookup sutra.max.dreamer-soft.pro 8.8.8.8` → тот же IP.
+- [ ] `nslookup sutra.max.dreamer-soft.pro 77.88.8.8` → тот же IP.
+- [ ] `nslookup sutra.max.dreamer-soft.pro 195.208.4.1` → тот же IP (reg.ru / многие RU-сети).
+- [ ] `curl.exe -sS https://sutra.max.dreamer-soft.pro/health` → **`ok`**.
+
+#### Проверка на телефоне (LTE/Wi‑Fi **без VPN**)
+
+- [ ] Chrome: `https://sutra.max.dreamer-soft.pro/health` → `ok`, без «небезопасное соединение».
+- [ ] Сравнение: `https://support.dreamer-soft.pro/health` открывается так же (если support жив — проблема узкая по `sutra.max`, иначе общая по зоне).
+
+Если **без VPN** `sutra` не открывается, а **с VPN** — да: чаще **кэш DNS оператора** по новому имени; приватный DNS (`dns.google` / `one.one.one.one`) или дождаться TTL.
+
+#### VPS и приложение
+
+- [ ] `/opt/SutraMaxBot/.env`: `PUBLIC_BASE_URL=https://sutra.max.dreamer-soft.pro` (без слэша на конце).
+- [ ] Nginx: `server_name sutra.max.dreamer-soft.pro`, сертификат Let's Encrypt на **это** имя (`certbot certificates`).
+- [ ] В кабинете **MAX**: URL Mini App = `https://sutra.max.dreamer-soft.pro/miniapp/` (не `master-solver.ru`).
+- [ ] После смены DNS/URL: пересборка/рестарт бота при необходимости; полностью закрыть MAX на телефоне и открыть снова.
+
+#### Опционально (старый Android / предупреждения TLS)
+
+- [ ] На VPS: `python deploy/vps/_fix_tls_chain.py` (цепочка **ISRG Root X1**), когда Let's Encrypt стабильно видит A-запись с внешних DNS.
+
+## Утренний дайджест касаний (чат MAX)
+
+Pro-пользователи с привязанным облаком (вход в Supabase в Mini App) получают в **9:00** сообщение с планом касаний на день. Данные читаются из **Supabase** (`SUPABASE_SERVICE_ROLE_KEY` в `.env` на VPS, **не** в Mini App). После деплоя: Pro → облако в Mini App → синхронизация CRM.
+
 ## 4. MAX
 
 - Mini App: `PUBLIC_BASE_URL/miniapp/`

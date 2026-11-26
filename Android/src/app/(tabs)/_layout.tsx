@@ -26,18 +26,14 @@ export default function TabLayout() {
         tabBarActiveTintColor: theme.service,
         tabBarInactiveTintColor: '#2A2622',
         tabBarShowLabel: false,
-        tabBarStyle: {
-          backgroundColor: theme.card,
-          borderTopColor: theme.line,
-          borderTopWidth: 1,
-          paddingTop: 8,
-          paddingBottom: 8,
-        },
+        tabBarItemStyle: styles.tabBarItem,
+        tabBarStyle: styles.tabBar,
+        safeAreaInsets: { bottom: 0, top: 0, left: 0, right: 0 },
         tabBarIcon: ({ color, focused }) => (
           <View style={[styles.iconWrap, focused && styles.iconWrapOn]}>
             <MaterialCommunityIcons
               name={tabIcon(route.name)}
-              size={26}
+              size={TAB_ICON}
               color={typeof color === 'string' ? color : theme.ink}
             />
           </View>
@@ -76,7 +72,7 @@ export default function TabLayout() {
 }
 
 function tabIcon(routeName: string): keyof typeof MaterialCommunityIcons.glyphMap {
-  if (routeName === 'support') return 'message-text-outline';
+  if (routeName === 'support') return 'comment-outline';
   if (routeName === 'directories') return 'book-open-variant';
   if (routeName === 'clients') return 'account-group';
   return 'calendar-month';
@@ -90,14 +86,35 @@ function HeaderLink({ href, label }: { href: Href; label: string }) {
   );
 }
 
+const TAB_ICON = 24;
+const TAB_ICON_PAD_V = 4;
+const TAB_ICON_WRAP_HEIGHT = TAB_ICON + TAB_ICON_PAD_V * 2;
+const TAB_BAR_PAD_V = 4;
+/** Высота панели = padding + обёртка иконки + padding (без запаса под safe area). */
+const TAB_BAR_HEIGHT = TAB_ICON_WRAP_HEIGHT + TAB_BAR_PAD_V * 2;
+
 const styles = StyleSheet.create({
+  tabBar: {
+    backgroundColor: theme.card,
+    borderTopColor: theme.line,
+    borderTopWidth: 1,
+    height: TAB_BAR_HEIGHT,
+    paddingTop: TAB_BAR_PAD_V,
+    paddingBottom: TAB_BAR_PAD_V,
+  },
+  tabBarItem: {
+    height: TAB_ICON_WRAP_HEIGHT,
+    justifyContent: 'center',
+    paddingVertical: 0,
+  },
   iconWrap: {
     alignItems: 'center',
-    borderRadius: 16,
+    borderRadius: 14,
+    height: TAB_ICON_WRAP_HEIGHT,
     justifyContent: 'center',
-    minWidth: 72,
-    paddingHorizontal: 16,
-    paddingVertical: 4,
+    minWidth: 56,
+    paddingHorizontal: 12,
+    paddingVertical: TAB_ICON_PAD_V,
   },
   iconWrapOn: { backgroundColor: '#D5EFEB' },
   headerActions: { alignItems: 'center', flexDirection: 'row' },

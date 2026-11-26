@@ -11,7 +11,7 @@ import {
 import { setAppLanguage } from "./localeContext.js";
 import { type AppLanguage, strings, type UiStrings } from "./i18n.js";
 import { deferRenderUntilBlur } from "./ui/editingGuard.js";
-import { setScreenLoading } from "./ui/loadingScreen.js";
+import { setPrimaryTabsVisible, setScreenLoading } from "./ui/loadingScreen.js";
 import {
   showProCloudSyncWarningIfNeeded,
   updateCloudTabWarningStyle,
@@ -246,6 +246,7 @@ async function showPrimary(tab: PrimaryTab): Promise<void> {
 
 async function main(): Promise<void> {
   initMaxWebApp();
+  setPrimaryTabsVisible(false);
   setScreenLoading(screen, "ru");
 
   me = await fetchMe();
@@ -271,6 +272,7 @@ async function main(): Promise<void> {
   });
 
   await renderScreen();
+  setPrimaryTabsVisible(true);
   updateCloudTabWarningStyle(me, cloudUi.signedInEmail);
   await showProCloudSyncWarningIfNeeded(t, me, cloudUi.signedInEmail);
 

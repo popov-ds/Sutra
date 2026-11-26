@@ -8,6 +8,7 @@ import { purchaseProPromoSubscription, purchaseProSubscription } from '@/billing
 import { RuStoreBillingError } from '@/billing/rustore';
 import { showDevTierTools } from '@/config/devTools';
 import { isPlayBuild, isRuStoreBuild } from '@/config/distribution';
+import { isProCloudSyncWarnDismissed, setProCloudSyncWarnDismissed } from '@/data/proCloudSyncWarningPref';
 import { runCloudSync } from '@/data/subscription';
 import { loadSession, sendEmailOtp, signOutCloud, verifyEmailOtp } from '@/data/syncAuth';
 import { getSupabase } from '@/lib/supabase';
@@ -60,7 +61,9 @@ export default function SettingsScreen() {
       setCloudWarnOpen(false);
       return;
     }
-    setCloudWarnOpen(true);
+    void isProCloudSyncWarnDismissed().then((dismissed) => {
+      if (!dismissed) setCloudWarnOpen(true);
+    });
   }, [cloudSyncMissing]);
 
   const sendOtp = async () => {
@@ -211,6 +214,7 @@ export default function SettingsScreen() {
             <Text style={styles.planBullet}>• {freeAdsLine}</Text>
             <Text style={styles.planBullet}>• {text.freeFeatureLimit(freeRecordLimit)}</Text>
             <Text style={styles.planBullet}>• {text.freeFeatureNoSync}</Text>
+            <Text style={styles.planBullet}>• {text.freeFeatureNoTouchNotifications}</Text>
             <Button
               label={purchaseBusy ? text.proPurchasing : text.upgradePro}
               onPress={() => (isRuStoreBuild() ? openProPlanPicker() : void upgradePro('pro_month'))}
@@ -222,6 +226,7 @@ export default function SettingsScreen() {
             <Text style={styles.planBullet}>• {text.proFeatureNoAds}</Text>
             <Text style={styles.planBullet}>• {text.proFeatureUnlimited}</Text>
             <Text style={styles.planBullet}>• {text.proFeatureSync}</Text>
+            <Text style={styles.planBullet}>• {text.proFeatureTouchNotifications}</Text>
             {devTools ? (
               <Button label={text.downgradeFreeDev} tone="quiet" onPress={() => void setTier('free')} />
             ) : null}
@@ -293,8 +298,12 @@ export default function SettingsScreen() {
 
     <ProCloudSyncWarningModal
       closeLabel={text.dialogClose}
+      dontShowAgainLabel={text.proCloudSyncWarnDontShowAgain}
       message={text.proCloudSyncWarning}
-      onClose={() => setCloudWarnOpen(false)}
+      onClose={(dontShowAgain) => {
+        setCloudWarnOpen(false);
+        if (dontShowAgain) void setProCloudSyncWarnDismissed();
+      }}
       visible={cloudWarnOpen}
     />
 

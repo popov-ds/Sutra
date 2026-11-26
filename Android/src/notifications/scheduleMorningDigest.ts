@@ -30,8 +30,21 @@ const CHANNEL_ID = 'morning-digest';
 let handlerReady = false;
 let tail: Promise<void> = Promise.resolve();
 
-export function syncMorningDigests(db: SQLiteDatabase): Promise<void> {
-  const run = tail.then(() => syncNow(db));
+export type MorningDigestOptions = {
+  /** Утренние касания — только тариф Pro */
+  pro?: boolean;
+};
+
+export async function cancelMorningDigests(): Promise<void> {
+  if (Platform.OS === "web") return;
+  await cancelDigests();
+}
+
+export function syncMorningDigests(
+  db: SQLiteDatabase,
+  options?: MorningDigestOptions,
+): Promise<void> {
+  const run = tail.then(() => syncNow(db, options));
   tail = run.then(
     () => undefined,
     () => undefined,
@@ -39,8 +52,13 @@ export function syncMorningDigests(db: SQLiteDatabase): Promise<void> {
   return run;
 }
 
-async function syncNow(db: SQLiteDatabase): Promise<void> {
+async function syncNow(db: SQLiteDatabase, options?: MorningDigestOptions): Promise<void> {
   if (Platform.OS === 'web') return;
+
+  if (options?.pro === false) {
+    await cancelDigests();
+    return;
+  }
 
   try {
     const today = todayIso();

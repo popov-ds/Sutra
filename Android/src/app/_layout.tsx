@@ -95,8 +95,8 @@ class DatabaseBoundary extends Component<{ children: ReactNode }, { message: str
 }
 
 const styles = StyleSheet.create({
-  appRoot: { flex: 1 },
-  appStack: { flex: 1 },
+  appRoot: { flex: 1, gap: 0 },
+  appStack: { flex: 1, minHeight: 0 },
   center: {
     alignItems: 'center',
     backgroundColor: theme.bg,

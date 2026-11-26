@@ -3,19 +3,21 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useNotificationAccess } from '@/notifications/useNotificationAccess';
 import { syncMorningDigests } from '@/notifications/scheduleMorningDigest';
+import { useSubscription } from '@/subscription/SubscriptionProvider';
 import { useStrings } from '@/i18n/LanguageProvider';
 import { theme } from '@/ui/theme';
 
 export function NotificationsDisabledBanner() {
   const text = useStrings();
   const db = useSQLiteContext();
+  const { isPro } = useSubscription();
   const { access, prompt } = useNotificationAccess();
 
-  if (access !== 'denied') return null;
+  if (!isPro || access !== 'denied') return null;
 
   const onEnable = () => {
     void prompt().then((next) => {
-      if (next === 'granted') void syncMorningDigests(db);
+      if (next === 'granted') void syncMorningDigests(db, { pro: true });
     });
   };
 

@@ -273,6 +273,7 @@ function buildCatalog(lang: AppLanguage) {
     proCloudSyncWarning: isEn
       ? "Attention! You have an active Pro plan, but cloud sync is not connected. Sign in to the cloud to keep your data safe."
       : "Внимание! У вас активен тариф Pro, но не подключена облачная синхронизация. Получите доступ к облаку и обеспечьте сохранность данных.",
+    proCloudSyncWarnDontShowAgain: isEn ? "Don't show again" : "Больше не показывать",
     tabCloud: isEn ? "Cloud" : "Облако",
     errors,
   };

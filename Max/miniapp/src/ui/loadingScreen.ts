@@ -1,5 +1,9 @@
 import { type AppLanguage, strings } from "../i18n.js";
 
+export function setPrimaryTabsVisible(visible: boolean): void {
+  document.querySelector(".tabs-primary")?.classList.toggle("tabs--hidden", !visible);
+}
+
 /** Полноэкранный индикатор ожидания до первого renderScreen. */
 export function setScreenLoading(screen: HTMLElement, lang: AppLanguage = "ru"): void {
   screen.classList.add("screen--loading");
