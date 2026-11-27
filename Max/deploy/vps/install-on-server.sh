@@ -32,7 +32,7 @@ fi
 
 export COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-sutramaxbot}"
 docker compose -f "${COMPOSE_FILE}" build
-docker compose -f "${COMPOSE_FILE}" up -d
+docker compose -f "${COMPOSE_FILE}" up -d --force-recreate bot
 
 echo ""
 docker compose -f "${COMPOSE_FILE}" ps

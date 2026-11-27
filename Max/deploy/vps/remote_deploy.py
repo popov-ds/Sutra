@@ -162,7 +162,7 @@ def main() -> None:
             c,
             f"cd {REMOTE} && COMPOSE_PROJECT_NAME=sutramaxbot "
             f"docker compose -f docker-compose.vps.yml build && "
-            f"docker compose -f docker-compose.vps.yml up -d",
+            f"docker compose -f docker-compose.vps.yml up -d --force-recreate bot",
         )
         hc = run(
             c,

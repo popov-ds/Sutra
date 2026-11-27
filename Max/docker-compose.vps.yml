@@ -35,6 +35,8 @@ services:
       DATABASE_URL: postgresql://sutra:${POSTGRES_PASSWORD:-sutra}@127.0.0.1:55433/sutra_max_bot
       PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-https://sutra.max.dreamer-soft.pro}
       MAX_USE_POLLING: ${MAX_USE_POLLING:-1}
+      # Передаётся из .env рядом с compose; пустое значение — без промокодов. Смена .env → recreate bot.
+      PROMO_CODES: ${PROMO_CODES:-}
     volumes:
       - sutramax_data:/data
     depends_on:
