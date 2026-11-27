@@ -1,6 +1,6 @@
 """Заливка обновлений SutraMaxBot на VPS: файлы и пересборка Docker.
 
-Пароль: SSH_PASS, SUTRAMAX_SSH_PASS или запрос при запуске.
+SSH: ключ (SUTRAMAX_SSH_KEY / SSH_KEY или ~/.ssh/id_ed25519_adminvps), иначе SUTRAMAX_SSH_PASS / SSH_PASS.
 Серверный .env, volume sutramax_data и /opt/solver не трогаем.
 Путь на VPS по умолчанию: /opt/SutraMaxBot (переопределение: SUTRAMAX_REMOTE).
 
@@ -9,7 +9,7 @@
 Запуск из каталога Max:
     python upload.py
     set SSH_HOST=168.113.171.219
-    set SSH_PASS=...
+    set SSH_KEY=%USERPROFILE%\\.ssh\\id_ed25519_adminvps
     python upload.py
 """
 
@@ -47,6 +47,40 @@ PATHS = (
 SKIP_DIRS = {"__pycache__", "node_modules", "dist", ".git", "data"}
 SKIP_NAMES = {".env", ".env.local"}
 SKIP_SUFFIXES = {".pyc", ".log"}
+
+
+def _ssh_key_path() -> Path | None:
+    raw = os.environ.get("SUTRAMAX_SSH_KEY") or os.environ.get("SSH_KEY")
+    if raw:
+        path = Path(raw).expanduser()
+        return path if path.is_file() else None
+    default = Path.home() / ".ssh" / "id_ed25519_adminvps"
+    return default if default.is_file() else None
+
+
+def connect_ssh() -> paramiko.SSHClient:
+    client = paramiko.SSHClient()
+    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    print(f"Подключение к {USER}@{HOST}")
+    key_path = _ssh_key_path()
+    if key_path:
+        print(f"SSH-ключ: {key_path}")
+        client.connect(
+            HOST,
+            username=USER,
+            key_filename=str(key_path),
+            look_for_keys=False,
+            allow_agent=True,
+            timeout=60,
+        )
+        return client
+    password = (
+        os.environ.get("SUTRAMAX_SSH_PASS")
+        or os.environ.get("SSH_PASS")
+        or getpass.getpass(f"Пароль {USER}@{HOST}: ")
+    )
+    client.connect(HOST, username=USER, password=password, timeout=60)
+    return client
 
 
 def run_soft(client: paramiko.SSHClient, command: str, timeout: int = 120) -> tuple[int, str, str]:
@@ -112,15 +146,7 @@ def compose_prefix() -> str:
 
 
 def main() -> None:
-    password = (
-        os.environ.get("SUTRAMAX_SSH_PASS")
-        or os.environ.get("SSH_PASS")
-        or getpass.getpass(f"Пароль {USER}@{HOST}: ")
-    )
-    client = paramiko.SSHClient()
-    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    print(f"Подключение к {USER}@{HOST}")
-    client.connect(HOST, username=USER, password=password, timeout=60)
+    client = connect_ssh()
 
     if "docker" not in run(client, "command -v docker || true", timeout=30):
         raise SystemExit(
